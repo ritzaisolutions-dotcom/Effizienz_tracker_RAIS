@@ -183,8 +183,9 @@
       font-family: var(--font-ui);
       font-size: 0.65rem;
       letter-spacing: 0.05em;
-      transition: color 0.2s;
+      touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
+      will-change: color;
     }
 
     .nav-item svg { width: 16px; height: 16px; }
@@ -566,23 +567,14 @@ function showApp() {
   initMusclePicker();
 }
 
-function initTabListeners() {
-  document.querySelector('[data-tab="training"]').addEventListener('click', () => {
-    if (trState === 'idle') initMusclePicker();
-    loadTRToday();
-  });
-  document.querySelector('[data-tab="outreach"]').addEventListener('click', () => {
-    loadOutreach('today');
-  });
-  document.querySelector('[data-tab="content"]').addEventListener('click', () => {
-    loadContentLog();
-  });
-  document.querySelector('[data-tab="todos"]').addEventListener('click', () => {
-    loadTodos();
-  });
-}
-
 // ── TAB NAVIGATION ──
+const TAB_ON_ACTIVATE = {
+  training: () => { if (trState === 'idle') initMusclePicker(); loadTRToday(); },
+  outreach: () => loadOutreach('today'),
+  content:  () => loadContentLog(),
+  todos:    () => loadTodos(),
+};
+
 function initTabs() {
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -591,6 +583,7 @@ function initTabs() {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('tab-' + tab).classList.add('active');
+      TAB_ON_ACTIVATE[tab]?.();
     });
   });
 }
@@ -599,7 +592,6 @@ function initTabs() {
 SB.auth.getSession().then(({ data: { session } }) => {
   if (session) showApp();
 });
-initTabListeners();
 
 // iOS: prevent double-tap zoom via CSS (touch-action safer than e.preventDefault on touchend)
 
