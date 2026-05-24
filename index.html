@@ -325,7 +325,13 @@
           <div style="font-size:0.7rem; letter-spacing:0.2em; color:var(--muted); margin-bottom:1.5rem;">
             SESSION ZUSAMMENFASSUNG
           </div>
-          <div id="dw-summary-content" style="margin-bottom:1.5rem;"></div>
+          <div id="dw-summary-content" style="margin-bottom:1.25rem;"></div>
+          <textarea id="dw-session-notes" placeholder="Was habe ich erarbeitet?"
+            style="width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px;
+                   padding:0.75rem; color:var(--text); font-family:var(--font-ui); font-size:0.9rem;
+                   resize:none; min-height:80px; outline:none; margin-bottom:1rem;
+                   transition:border-color 0.2s;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
             <button onclick="dwDiscard()"
               style="background:transparent; border:1px solid var(--border); border-radius:8px;
@@ -478,12 +484,13 @@
   </div>
 
   <nav class="bottom-nav">
-    <button class="nav-item active" data-tab="overview">
+    <button class="nav-item active" data-tab="overview" style="position:relative;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
         <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
       </svg>
-      Overview
+      Overview<span id="sync-badge" style="display:none; position:absolute; top:6px; right:10px;
+        width:7px; height:7px; background:var(--yellow); border-radius:50%;"></span>
     </button>
     <button class="nav-item" data-tab="deepwork">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -605,6 +612,8 @@ function showApp() {
   loadDWToday();
   loadTRToday();
   initMusclePicker();
+  updateSyncBadge();
+  flushSyncQueue();
 }
 
 // ── TAB NAVIGATION ──
@@ -618,6 +627,7 @@ const TAB_ON_ACTIVATE = {
 function initTabs() {
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
+      playClickSound('tap'); triggerHaptic([8]);
       const tab = btn.dataset.tab;
       document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -811,6 +821,7 @@ function trGetActiveSeconds() {
 
 function trStart() {
   if (!trSelectedMuscle) return;
+  playClickSound('start'); triggerHaptic([15]);
   trState = 'active';
   trStartedAt = new Date();
   trActiveStart = new Date();
@@ -882,6 +893,7 @@ function renderTRState() {
 }
 
 function trTogglePause() {
+  playClickSound('tap'); triggerHaptic([10]);
   if (trState === 'active') trPause();
   else if (trState === 'paused') trResume();
 }
@@ -912,6 +924,7 @@ function showTRSummaryModal() {
 }
 
 async function trSave() {
+  playClickSound('stop'); triggerHaptic([20, 50, 20]);
   document.getElementById('tr-summary-modal').classList.add('hidden');
   await trSaveSession();
   trActiveSeconds = 0;
@@ -948,14 +961,15 @@ async function trCreateSession() {
 
 async function trSaveSession() {
   if (!trCurrentSessionId) return;
-  await SB.from('tracker_sessions').update({
+  const id = trCurrentSessionId;
+  trCurrentSessionId = null;
+  await sbSave('tracker_sessions', id, {
     ended_at: new Date().toISOString(),
     total_seconds: trGetTotalSeconds(),
     focused_seconds: trGetActiveSeconds(),
     is_active: false,
     is_paused: false
-  }).eq('id', trCurrentSessionId);
-  trCurrentSessionId = null;
+  });
   loadTRToday();
   loadOverview();
 }
@@ -1088,6 +1102,10 @@ function renderOutreach(sessions, events, period) {
   const tabs = ['today', 'week', 'month'];
   const tabLabels = { today: 'Heute', week: 'Woche', month: 'Monat' };
 
+  const outreachGoal = parseInt(localStorage.getItem('outreach_daily_goal') || '50');
+  const outreachPct = Math.min(100, Math.round((totalPlayed / outreachGoal) * 100));
+  const outreachBarColor = outreachPct >= 100 ? 'var(--green)' : outreachPct >= 50 ? 'var(--yellow)' : 'var(--red)';
+
   document.getElementById('tab-outreach').innerHTML = `
     <div style="display:flex; gap:0.5rem; margin-bottom:1.25rem;">
       ${tabs.map(t => `
@@ -1101,6 +1119,18 @@ function renderOutreach(sessions, events, period) {
         </button>
       `).join('')}
     </div>
+    ${period === 'today' ? `
+    <div class="card" style="margin-bottom:0.75rem; padding:0.85rem 1rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+        <span style="font-size:0.65rem; letter-spacing:0.1em; color:var(--muted);">TAGESZIEL</span>
+        <span style="font-size:0.75rem; color:var(--muted);">${totalPlayed} / ${outreachGoal} Leads
+          <button onclick="editOutreachGoal()" style="background:none; border:none; cursor:pointer; color:var(--muted); padding:0 0.2rem; font-size:0.8rem;">✏️</button>
+        </span>
+      </div>
+      <div style="background:var(--border); border-radius:4px; height:5px; overflow:hidden;">
+        <div style="width:${outreachPct}%; background:${outreachBarColor}; height:100%; border-radius:4px; transition:width 0.3s;"></div>
+      </div>
+    </div>` : ''}
     <div class="card" style="margin-bottom:0.75rem;">
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem; text-align:center; margin-bottom:1rem;">
         <div>
@@ -1182,6 +1212,7 @@ function dwGetFocusedSeconds() {
 }
 
 function dwStart() {
+  playClickSound('start'); triggerHaptic([15]);
   dwStartLabel = document.getElementById('dw-label-start-input').value.trim();
   dwState = 'active';
   dwStartedAt = new Date();
@@ -1308,6 +1339,7 @@ function renderDWState() {
 }
 
 function dwTogglePause() {
+  playClickSound('tap'); triggerHaptic([10]);
   if (dwState === 'active') dwPause();
   else if (dwState === 'paused') dwResume();
 }
@@ -1341,10 +1373,13 @@ function showDWSummaryModal() {
 }
 
 async function dwSave() {
+  playClickSound('stop'); triggerHaptic([20, 50, 20]);
+  const notes = document.getElementById('dw-session-notes').value.trim();
   document.getElementById('dw-summary-modal').classList.add('hidden');
-  await dwSaveSession(dwStartLabel);
+  await dwSaveSession(dwStartLabel, notes);
   dwStartLabel = '';
   document.getElementById('dw-label-start-input').value = '';
+  document.getElementById('dw-session-notes').value = '';
   renderDWState();
 }
 
@@ -1373,17 +1408,19 @@ async function dwCreateSession() {
   dwCurrentSessionId = data.id;
 }
 
-async function dwSaveSession(label) {
+async function dwSaveSession(label, notes) {
   if (!dwCurrentSessionId) return;
-  await SB.from('tracker_sessions').update({
+  const id = dwCurrentSessionId;
+  dwCurrentSessionId = null;
+  await sbSave('tracker_sessions', id, {
     ended_at: new Date().toISOString(),
     total_seconds: dwGetTotalSeconds(),
     focused_seconds: dwGetFocusedSeconds(),
     label: label || null,
+    notes: notes || null,
     is_active: false,
     is_paused: false
-  }).eq('id', dwCurrentSessionId);
-  dwCurrentSessionId = null;
+  });
   loadDWToday();
   loadOverview();
 }
@@ -1439,6 +1476,8 @@ async function loadOverview() {
   streak60Start.setHours(0, 0, 0, 0);
   const streak60StartISO = streak60Start.toISOString();
 
+  const week7Start = new Date(); week7Start.setDate(week7Start.getDate() - 6); week7Start.setHours(0,0,0,0);
+
   const [
     { data: dwToday },
     { data: trainToday },
@@ -1448,7 +1487,9 @@ async function loadOverview() {
     { data: allSessionsToday },
     { data: allSessionsWeek },
     { data: allSessionsMonth },
-    { data: streakSessions }
+    { data: streakSessions },
+    { data: trainWeek7 },
+    { data: lastNoteSession }
   ] = await Promise.all([
     SB.from('tracker_sessions').select('focused_seconds').eq('type','deep_work').eq('is_active',false).gte('started_at', todayISO),
     SB.from('tracker_sessions').select('focused_seconds').eq('type','training').eq('is_active',false).gte('started_at', todayISO),
@@ -1458,7 +1499,9 @@ async function loadOverview() {
     SB.from('tracker_sessions').select('total_seconds, focused_seconds').eq('is_active',false).gte('started_at', todayISO),
     SB.from('tracker_sessions').select('total_seconds, focused_seconds').eq('is_active',false).gte('started_at', weekStartISO),
     SB.from('tracker_sessions').select('total_seconds, focused_seconds').eq('is_active',false).gte('started_at', monthStartISO),
-    SB.from('tracker_sessions').select('started_at, focused_seconds').eq('type','deep_work').eq('is_active',false).gte('started_at', streak60StartISO)
+    SB.from('tracker_sessions').select('started_at, focused_seconds').eq('type','deep_work').eq('is_active',false).gte('started_at', streak60StartISO),
+    SB.from('tracker_sessions').select('started_at, label').eq('type','training').eq('is_active',false).gte('started_at', week7Start.toISOString()).order('started_at'),
+    SB.from('tracker_sessions').select('started_at, notes, label').eq('type','deep_work').eq('is_active',false).not('notes','is',null).order('ended_at', { ascending: false }).limit(1)
   ]);
 
   const dwTodayTotal = (dwToday || []).reduce((s, r) => s + (r.focused_seconds || 0), 0);
@@ -1486,6 +1529,50 @@ async function loadOverview() {
   const dwWeekTotal = (dwWeek || []).filter(r => r.type === 'deep_work').reduce((s, r) => s + (r.focused_seconds || 0), 0);
   const dwWeekGoalSec = dwWeekGoalHours * 3600;
   const dwWeekPct = Math.min(100, Math.round((dwWeekTotal / dwWeekGoalSec) * 100));
+
+  // Training 7-Tage Wochenhistorie
+  const trMuscleColor = label => {
+    const l = (label || '').toLowerCase();
+    if (['brust','rücken','schultern','arme'].includes(l)) return 'var(--accent)';
+    if (['beine','core'].includes(l)) return 'var(--green)';
+    if (['cardio','kampfsport'].includes(l)) return '#60A5FA';
+    if (l === 'full body') return 'var(--yellow)';
+    return 'var(--accent)';
+  };
+  const trByDay7 = {};
+  (trainWeek7 || []).forEach(r => {
+    const d = getLocalDateString(new Date(r.started_at));
+    trByDay7[d] = r.label;
+  });
+  const trDots = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (6 - i));
+    const key = getLocalDateString(d);
+    const dayLabel = d.toLocaleDateString('de-DE', { weekday: 'short' }).slice(0, 2);
+    const muscle = trByDay7[key];
+    return muscle
+      ? `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
+           <div style="width:14px;height:14px;border-radius:50%;background:${trMuscleColor(muscle)};"></div>
+           <div style="font-size:0.55rem;color:var(--muted);">${dayLabel}</div>
+         </div>`
+      : `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
+           <div style="width:14px;height:14px;border-radius:50%;border:1.5px solid var(--border);"></div>
+           <div style="font-size:0.55rem;color:var(--border);">${dayLabel}</div>
+         </div>`;
+  }).join('');
+  const trWeekCount = (trainWeek7 || []).length;
+
+  // Letzte DW Notiz
+  const lastNote = lastNoteSession && lastNoteSession[0];
+
+  // Snapshot für Wochenbericht (Calls: Supabase-Query für die Woche)
+  const { data: callsWeekData } = await SB.from('crm_sessions').select('leads_played').gte('started_at', weekStartISO);
+  const callsWeekTotal = (callsWeekData || []).reduce((s, r) => s + (r.leads_played || 0), 0);
+  _overviewSnap = {
+    dwWeekSec: dwWeekTotal,
+    trWeekCount,
+    callsWeek: callsWeekTotal,
+    contentWeek: contentCount
+  };
 
   function calcEffizienz(sessions) {
     const total   = (sessions || []).reduce((s, r) => s + (r.total_seconds   || 0), 0);
@@ -1604,6 +1691,32 @@ async function loadOverview() {
           Training
         </div>
       </div>
+    </div>
+    <div class="card" style="margin-top:0.75rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+        <div class="section-title" style="margin-bottom:0;">TRAINING 7 TAGE</div>
+        <div style="font-size:0.65rem; color:var(--muted);">${trWeekCount}x diese Woche</div>
+      </div>
+      <div style="display:flex; gap:0.25rem; justify-content:space-between; padding:0 0.1rem;">
+        ${trDots}
+      </div>
+    </div>
+    ${lastNote ? `
+    <div class="card" style="margin-top:0.75rem;">
+      <div class="section-title">LETZTE NOTIZ</div>
+      <div style="font-size:0.65rem; color:var(--muted); margin-bottom:0.4rem;">
+        ${new Date(lastNote.started_at).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'})}
+        ${lastNote.label ? `· ${lastNote.label}` : ''}
+      </div>
+      <div style="font-size:0.82rem; color:var(--text); line-height:1.5;">${lastNote.notes}</div>
+    </div>` : ''}
+    <div style="margin-top:0.75rem; text-align:center;">
+      <button id="week-report-btn" onclick="copyWeekReport()"
+        style="background:transparent; border:1px solid var(--border); border-radius:8px;
+               padding:0.6rem 1.2rem; color:var(--muted); font-family:var(--font-ui);
+               font-size:0.8rem; cursor:pointer; touch-action:manipulation;">
+        📋 Woche kopieren
+      </button>
     </div>
   `;
 }
@@ -1885,6 +1998,112 @@ function editDWGoal() {
     localStorage.setItem('dw_weekly_goal_hours', parseFloat(val).toString());
     loadOverview();
   }
+}
+
+// ── OUTREACH TAGESZIEL ──
+function editOutreachGoal() {
+  const current = localStorage.getItem('outreach_daily_goal') || '50';
+  const val = prompt('Tagesziel Outreach (Leads):', current);
+  if (val && !isNaN(parseInt(val)) && parseInt(val) > 0) {
+    localStorage.setItem('outreach_daily_goal', parseInt(val).toString());
+    loadOutreach();
+  }
+}
+
+// ── OFFLINE SYNC QUEUE ──
+async function sbSave(table, id, data) {
+  if (!navigator.onLine) {
+    const queue = JSON.parse(localStorage.getItem('offline_sync_queue') || '[]');
+    queue.push({ table, id, data, ts: Date.now() });
+    localStorage.setItem('offline_sync_queue', JSON.stringify(queue));
+    showToast('Offline — wird synchronisiert wenn Netz da ist');
+    updateSyncBadge();
+    return;
+  }
+  await SB.from(table).update(data).eq('id', id);
+}
+
+async function flushSyncQueue() {
+  const queue = JSON.parse(localStorage.getItem('offline_sync_queue') || '[]');
+  if (!queue.length) return;
+  let synced = 0;
+  for (const item of queue) {
+    try {
+      await SB.from(item.table).update(item.data).eq('id', item.id);
+      synced++;
+    } catch(e) {}
+  }
+  localStorage.removeItem('offline_sync_queue');
+  updateSyncBadge();
+  if (synced > 0) showToast(`${synced} Session(s) synchronisiert ✓`);
+}
+window.addEventListener('online', flushSyncQueue);
+
+function updateSyncBadge() {
+  const queue = JSON.parse(localStorage.getItem('offline_sync_queue') || '[]');
+  const badge = document.getElementById('sync-badge');
+  if (badge) badge.style.display = queue.length > 0 ? 'block' : 'none';
+}
+
+let _toastTimeout = null;
+function showToast(msg) {
+  let toast = document.getElementById('app-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'app-toast';
+    toast.style.cssText = 'position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:var(--surface); border:1px solid var(--border); color:var(--text); padding:0.6rem 1.2rem; border-radius:8px; font-size:0.82rem; z-index:9999; white-space:nowrap; opacity:0; transition:opacity 0.25s; pointer-events:none;';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(_toastTimeout);
+  _toastTimeout = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+}
+
+// ── HAPTIC + AUDIO ──
+let _audioCtx = null;
+function playClickSound(type = 'tap') {
+  if (document.hidden) return;
+  try {
+    _audioCtx = _audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = _audioCtx.createOscillator();
+    const g = _audioCtx.createGain();
+    o.connect(g); g.connect(_audioCtx.destination);
+    const configs = {
+      tap:   { freq: 800, dur: 0.05, vol: 0.12 },
+      start: { freq: 520, dur: 0.12, vol: 0.18 },
+      stop:  { freq: 280, dur: 0.15, vol: 0.18 },
+    };
+    const c = configs[type] || configs.tap;
+    o.frequency.value = c.freq;
+    g.gain.setValueAtTime(c.vol, _audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + c.dur);
+    o.start(); o.stop(_audioCtx.currentTime + c.dur);
+  } catch(e) {}
+}
+
+function triggerHaptic(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
+// ── WOCHENBERICHT ──
+let _overviewSnap = {};
+
+function getISOWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
+function copyWeekReport() {
+  const kw = getISOWeekNumber(new Date());
+  const s = _overviewSnap;
+  const text = `KW ${kw} | DW: ${Math.round((s.dwWeekSec||0)/3600)}h | Training: ${s.trWeekCount||0}x | Outreach: ${s.callsWeek||0} | Content: ${s.contentWeek||0}`;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('week-report-btn');
+    if (btn) { btn.textContent = '✓ Kopiert!'; setTimeout(() => { btn.textContent = '📋 Woche kopieren'; }, 2000); }
+  });
 }
 </script>
 <script>
