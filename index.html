@@ -402,48 +402,35 @@
 
       <!-- Quick-Add Card -->
       <div class="card" style="margin-bottom:1.25rem;">
-        <div style="font-size:0.7rem; color:var(--muted); letter-spacing:0.12em; margin-bottom:0.75rem;">TYP</div>
-        <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
-          <button class="content-type-btn" id="ctype-episode" onclick="selectContentType('episode')"
-            style="flex:1; padding:0.65rem 0.25rem; background:transparent; border:1px solid var(--border);
-                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; cursor:pointer;">
-            🎙 Episode
+        <div style="font-size:0.7rem; color:var(--muted); letter-spacing:0.12em; margin-bottom:0.75rem;">FORMAT</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:1rem;">
+          <button class="content-format-btn" id="cfmt-lfc" onclick="selectContentFormat('lfc')"
+            style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
+                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
+                   cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
+            🎙<br><strong style="font-size:0.9rem;">LFC</strong><br><span style="font-size:0.68rem;">Long Form</span>
           </button>
-          <button class="content-type-btn" id="ctype-short" onclick="selectContentType('short')"
-            style="flex:1; padding:0.65rem 0.25rem; background:transparent; border:1px solid var(--border);
-                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; cursor:pointer;">
-            📱 Short
+          <button class="content-format-btn" id="cfmt-sfc" onclick="selectContentFormat('sfc')"
+            style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
+                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
+                   cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
+            ⚡<br><strong style="font-size:0.9rem;">SFC</strong><br><span style="font-size:0.68rem;">Short Form</span>
           </button>
-          <button class="content-type-btn" id="ctype-post" onclick="selectContentType('post')"
-            style="flex:1; padding:0.65rem 0.25rem; background:transparent; border:1px solid var(--border);
-                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; cursor:pointer;">
-            📝 Post
+          <button class="content-format-btn" id="cfmt-artikel" onclick="selectContentFormat('artikel')"
+            style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
+                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
+                   cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
+            ✍️<br><strong style="font-size:0.9rem;">Artikel</strong><br><span style="font-size:0.68rem;">Fundament</span>
+          </button>
+          <button class="content-format-btn" id="cfmt-post" onclick="selectContentFormat('post')"
+            style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
+                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
+                   cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
+            📸<br><strong style="font-size:0.9rem;">Post</strong><br><span style="font-size:0.68rem;">Instagram</span>
           </button>
         </div>
 
-        <div style="font-size:0.7rem; color:var(--muted); letter-spacing:0.12em; margin-bottom:0.75rem;">PLATTFORM</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:1rem;">
-          <button class="content-platform-btn" id="cplatform-eckstein" onclick="selectContentPlatform('eckstein')"
-            style="padding:0.65rem; background:transparent; border:1px solid var(--border);
-                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; cursor:pointer;">
-            Eckstein Podcast
-          </button>
-          <button class="content-platform-btn" id="cplatform-youtube" onclick="selectContentPlatform('youtube')"
-            style="padding:0.65rem; background:transparent; border:1px solid var(--border);
-                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; cursor:pointer;">
-            YouTube
-          </button>
-          <button class="content-platform-btn" id="cplatform-instagram" onclick="selectContentPlatform('instagram')"
-            style="padding:0.65rem; background:transparent; border:1px solid var(--border);
-                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; cursor:pointer;">
-            Instagram
-          </button>
-          <button class="content-platform-btn" id="cplatform-tiktok" onclick="selectContentPlatform('tiktok')"
-            style="padding:0.65rem; background:transparent; border:1px solid var(--border);
-                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; cursor:pointer;">
-            TikTok
-          </button>
-        </div>
+        <div id="content-platform-info" style="font-size:0.72rem; color:var(--muted); margin-bottom:1rem; min-height:1.2rem; letter-spacing:0.02em;"></div>
 
         <input type="text" id="content-title-input" placeholder="Titel (optional)"
           style="background:var(--bg); border:1px solid var(--border); border-radius:8px;
@@ -453,7 +440,7 @@
         <button id="content-save-btn" onclick="saveContent()" disabled
           style="width:100%; background:var(--accent); border:none; border-radius:8px;
                  padding:1rem; color:#000; font-family:var(--font-ui); font-weight:600;
-                 font-size:0.95rem; cursor:not-allowed; opacity:0.4;">
+                 font-size:0.95rem; cursor:not-allowed; opacity:0.4; touch-action:manipulation;">
           + Speichern
         </button>
       </div>
@@ -600,77 +587,60 @@ document.getElementById('login-password').addEventListener('keydown', e => {
 });
 
 // ── CONTENT ──
-const CONTENT_TYPES = ['episode', 'short', 'post'];
-const CONTENT_PLATFORMS = ['eckstein', 'youtube', 'instagram', 'tiktok'];
-const PLATFORM_LABELS = { eckstein: 'Eckstein Podcast', youtube: 'YouTube', instagram: 'Instagram', tiktok: 'TikTok' };
-const TYPE_LABELS = { episode: 'Episode', short: 'Short', post: 'Post' };
-const TYPE_ICONS = { episode: '🎙', short: '📱', post: '📝' };
+const CONTENT_FORMATS = {
+  lfc:     { label: 'LFC — Long Form',     icon: '🎙', platforms: 'Rumble · YouTube · Spotify',               type: 'episode' },
+  sfc:     { label: 'SFC — Short Form',    icon: '⚡', platforms: 'YT Shorts · TikTok · Reels · Rumble · X',  type: 'short'   },
+  artikel: { label: 'Artikel / Fundament', icon: '✍️', platforms: 'Substack · X',                             type: 'post'    },
+  post:    { label: 'Post',                icon: '📸', platforms: 'Instagram',                                type: 'post'    },
+};
 
-let contentType = null;
-let contentPlatform = null;
+let contentFormat = null;
+
+function selectContentFormat(fmt) {
+  contentFormat = fmt;
+  document.querySelectorAll('.content-format-btn').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.color = 'var(--muted)';
+    b.style.background = 'transparent';
+  });
+  const btn = document.getElementById('cfmt-' + fmt);
+  btn.style.borderColor = 'var(--accent)';
+  btn.style.color = 'var(--accent)';
+  btn.style.background = 'rgba(236,106,55,0.12)';
+  document.getElementById('content-platform-info').textContent = CONTENT_FORMATS[fmt].platforms;
+  const saveBtn = document.getElementById('content-save-btn');
+  saveBtn.disabled = false;
+  saveBtn.style.opacity = '1';
+  saveBtn.style.cursor = 'pointer';
+}
 
 async function saveContent() {
-  if (!contentType || !contentPlatform) return;
+  if (!contentFormat) return;
+  const fmt = CONTENT_FORMATS[contentFormat];
   const title = document.getElementById('content-title-input').value.trim() || null;
   const { data: { user } } = await SB.auth.getUser();
   const { error } = await SB.from('tracker_content_log').insert({
-    type: contentType,
-    platform: contentPlatform,
+    type: fmt.type,
+    platform: contentFormat,
     title: title,
     published_at: new Date().toISOString().split('T')[0],
     created_by: user.id
   });
   if (!error) {
-    contentType = null;
-    contentPlatform = null;
+    contentFormat = null;
     document.getElementById('content-title-input').value = '';
+    document.getElementById('content-platform-info').textContent = '';
     const saveBtn = document.getElementById('content-save-btn');
     saveBtn.disabled = true;
     saveBtn.style.opacity = '0.4';
-    document.querySelectorAll('.content-type-btn, .content-platform-btn').forEach(b => {
+    saveBtn.style.cursor = 'not-allowed';
+    document.querySelectorAll('.content-format-btn').forEach(b => {
       b.style.borderColor = 'var(--border)';
       b.style.color = 'var(--muted)';
       b.style.background = 'transparent';
     });
     loadContentLog();
     loadOverview();
-  }
-}
-
-function selectContentType(type) {
-  contentType = type;
-  document.querySelectorAll('.content-type-btn').forEach(b => {
-    b.style.borderColor = 'var(--border)';
-    b.style.color = 'var(--muted)';
-    b.style.background = 'transparent';
-  });
-  const btn = document.getElementById('ctype-' + type);
-  btn.style.borderColor = 'var(--accent)';
-  btn.style.color = 'var(--accent)';
-  btn.style.background = 'rgba(236,106,55,0.12)';
-  checkContentReady();
-}
-
-function selectContentPlatform(platform) {
-  contentPlatform = platform;
-  document.querySelectorAll('.content-platform-btn').forEach(b => {
-    b.style.borderColor = 'var(--border)';
-    b.style.color = 'var(--muted)';
-    b.style.background = 'transparent';
-  });
-  const btn = document.getElementById('cplatform-' + platform);
-  btn.style.borderColor = 'var(--accent)';
-  btn.style.color = 'var(--accent)';
-  btn.style.background = 'rgba(236,106,55,0.12)';
-  checkContentReady();
-}
-
-function checkContentReady() {
-  const btn = document.getElementById('content-save-btn');
-  if (contentType && contentPlatform) {
-    btn.disabled = false;
-    btn.style.opacity = '1';
-    btn.style.cursor = 'pointer';
   }
 }
 
@@ -690,21 +660,23 @@ async function loadContentLog() {
     list.innerHTML = '<div style="color:var(--muted); font-size:0.85rem;">Noch nichts published diese Woche.</div>';
     return;
   }
-  list.innerHTML = data.map(r => `
+  list.innerHTML = data.map(r => {
+    const fmt = CONTENT_FORMATS[r.platform] || { icon: '📄', label: r.platform, platforms: '' };
+    return `
     <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:0.85rem 1rem;">
       <div>
         <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.2rem;">
-          <span>${TYPE_ICONS[r.type]}</span>
-          <span style="font-size:0.85rem; font-weight:500;">${TYPE_LABELS[r.type]}</span>
-          <span style="font-size:0.7rem; color:var(--muted);">· ${PLATFORM_LABELS[r.platform]}</span>
+          <span>${fmt.icon}</span>
+          <span style="font-size:0.85rem; font-weight:500;">${fmt.label}</span>
         </div>
-        ${r.title ? `<div style="font-size:0.75rem; color:var(--muted);">${r.title}</div>` : ''}
+        <div style="font-size:0.7rem; color:var(--muted);">${fmt.platforms}</div>
+        ${r.title ? `<div style="font-size:0.75rem; color:var(--muted); margin-top:0.2rem;">${r.title}</div>` : ''}
       </div>
       <div style="font-size:0.7rem; color:var(--muted); white-space:nowrap;">
         ${new Date(r.published_at + 'T12:00:00').toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'})}
       </div>
     </div>
-  `).join('');
+  `}).join('');
 }
 
 // ── ACTIVE SESSION RECOVERY ──
