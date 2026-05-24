@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>RAIS Tracker</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0A0A0A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RAIS Tracker">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -388,7 +393,74 @@
     </div>
 
     <div class="tab-panel" id="tab-outreach"></div>
-    <div class="tab-panel" id="tab-content"><!-- Session 4 füllt das --></div>
+    <div class="tab-panel" id="tab-content">
+      <div class="section-title">Content veröffentlicht</div>
+
+      <!-- Quick-Add Card -->
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div style="font-size:0.7rem; color:var(--muted); letter-spacing:0.12em; margin-bottom:0.75rem;">TYP</div>
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+          <button class="content-type-btn" id="ctype-episode" onclick="selectContentType('episode')"
+            style="flex:1; padding:0.65rem 0.25rem; background:transparent; border:1px solid var(--border);
+                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; cursor:pointer;">
+            🎙 Episode
+          </button>
+          <button class="content-type-btn" id="ctype-short" onclick="selectContentType('short')"
+            style="flex:1; padding:0.65rem 0.25rem; background:transparent; border:1px solid var(--border);
+                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; cursor:pointer;">
+            📱 Short
+          </button>
+          <button class="content-type-btn" id="ctype-post" onclick="selectContentType('post')"
+            style="flex:1; padding:0.65rem 0.25rem; background:transparent; border:1px solid var(--border);
+                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; cursor:pointer;">
+            📝 Post
+          </button>
+        </div>
+
+        <div style="font-size:0.7rem; color:var(--muted); letter-spacing:0.12em; margin-bottom:0.75rem;">PLATTFORM</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:1rem;">
+          <button class="content-platform-btn" id="cplatform-eckstein" onclick="selectContentPlatform('eckstein')"
+            style="padding:0.65rem; background:transparent; border:1px solid var(--border);
+                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; cursor:pointer;">
+            Eckstein Podcast
+          </button>
+          <button class="content-platform-btn" id="cplatform-youtube" onclick="selectContentPlatform('youtube')"
+            style="padding:0.65rem; background:transparent; border:1px solid var(--border);
+                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; cursor:pointer;">
+            YouTube
+          </button>
+          <button class="content-platform-btn" id="cplatform-instagram" onclick="selectContentPlatform('instagram')"
+            style="padding:0.65rem; background:transparent; border:1px solid var(--border);
+                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; cursor:pointer;">
+            Instagram
+          </button>
+          <button class="content-platform-btn" id="cplatform-tiktok" onclick="selectContentPlatform('tiktok')"
+            style="padding:0.65rem; background:transparent; border:1px solid var(--border);
+                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; cursor:pointer;">
+            TikTok
+          </button>
+        </div>
+
+        <input type="text" id="content-title-input" placeholder="Titel (optional)"
+          style="background:var(--bg); border:1px solid var(--border); border-radius:8px;
+                 padding:0.75rem; color:var(--text); font-family:var(--font-ui);
+                 font-size:0.9rem; width:100%; margin-bottom:1rem; outline:none;">
+
+        <button id="content-save-btn" onclick="saveContent()" disabled
+          style="width:100%; background:var(--accent); border:none; border-radius:8px;
+                 padding:1rem; color:#000; font-family:var(--font-ui); font-weight:600;
+                 font-size:0.95rem; cursor:not-allowed; opacity:0.4;">
+          + Speichern
+        </button>
+      </div>
+
+      <!-- Log -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+        <div class="section-title" style="margin-bottom:0;">DIESE WOCHE</div>
+        <div id="content-week-count" style="font-size:0.75rem; color:var(--muted);"></div>
+      </div>
+      <div id="content-log-list"></div>
+    </div>
   </div>
 
   <nav class="bottom-nav">
@@ -475,8 +547,10 @@ function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-shell').classList.add('visible');
   initTabs();
+  recoverActiveSession();
   loadOverview();
   loadDWToday();
+  loadTRToday();
   initMusclePicker();
 }
 
@@ -487,6 +561,9 @@ function initTabListeners() {
   });
   document.querySelector('[data-tab="outreach"]').addEventListener('click', () => {
     loadOutreach('today');
+  });
+  document.querySelector('[data-tab="content"]').addEventListener('click', () => {
+    loadContentLog();
   });
 }
 
@@ -509,9 +586,142 @@ SB.auth.getSession().then(({ data: { session } }) => {
 });
 initTabListeners();
 
+// iOS: prevent double-tap zoom on buttons
+document.querySelectorAll('button').forEach(btn => {
+  btn.addEventListener('touchend', e => e.preventDefault());
+});
+
 document.getElementById('login-password').addEventListener('keydown', e => {
   if (e.key === 'Enter') handleLogin();
 });
+
+// ── CONTENT ──
+const CONTENT_TYPES = ['episode', 'short', 'post'];
+const CONTENT_PLATFORMS = ['eckstein', 'youtube', 'instagram', 'tiktok'];
+const PLATFORM_LABELS = { eckstein: 'Eckstein Podcast', youtube: 'YouTube', instagram: 'Instagram', tiktok: 'TikTok' };
+const TYPE_LABELS = { episode: 'Episode', short: 'Short', post: 'Post' };
+const TYPE_ICONS = { episode: '🎙', short: '📱', post: '📝' };
+
+let contentType = null;
+let contentPlatform = null;
+
+async function saveContent() {
+  if (!contentType || !contentPlatform) return;
+  const title = document.getElementById('content-title-input').value.trim() || null;
+  const { data: { user } } = await SB.auth.getUser();
+  const { error } = await SB.from('tracker_content_log').insert({
+    type: contentType,
+    platform: contentPlatform,
+    title: title,
+    published_at: new Date().toISOString().split('T')[0],
+    created_by: user.id
+  });
+  if (!error) {
+    contentType = null;
+    contentPlatform = null;
+    document.getElementById('content-title-input').value = '';
+    const saveBtn = document.getElementById('content-save-btn');
+    saveBtn.disabled = true;
+    saveBtn.style.opacity = '0.4';
+    document.querySelectorAll('.content-type-btn, .content-platform-btn').forEach(b => {
+      b.style.borderColor = 'var(--border)';
+      b.style.color = 'var(--muted)';
+      b.style.background = 'transparent';
+    });
+    loadContentLog();
+    loadOverview();
+  }
+}
+
+function selectContentType(type) {
+  contentType = type;
+  document.querySelectorAll('.content-type-btn').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.color = 'var(--muted)';
+    b.style.background = 'transparent';
+  });
+  const btn = document.getElementById('ctype-' + type);
+  btn.style.borderColor = 'var(--accent)';
+  btn.style.color = 'var(--accent)';
+  btn.style.background = 'rgba(200,255,0,0.08)';
+  checkContentReady();
+}
+
+function selectContentPlatform(platform) {
+  contentPlatform = platform;
+  document.querySelectorAll('.content-platform-btn').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.color = 'var(--muted)';
+    b.style.background = 'transparent';
+  });
+  const btn = document.getElementById('cplatform-' + platform);
+  btn.style.borderColor = 'var(--accent)';
+  btn.style.color = 'var(--accent)';
+  btn.style.background = 'rgba(200,255,0,0.08)';
+  checkContentReady();
+}
+
+function checkContentReady() {
+  const btn = document.getElementById('content-save-btn');
+  if (contentType && contentPlatform) {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+  }
+}
+
+async function loadContentLog() {
+  const weekStart = getWeekStart();
+  const { data } = await SB.from('tracker_content_log')
+    .select('*')
+    .gte('published_at', weekStart)
+    .order('published_at', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  const list = document.getElementById('content-log-list');
+  const counter = document.getElementById('content-week-count');
+  if (!list) return;
+  counter.textContent = `${(data || []).length} Pieces diese Woche`;
+  if (!data || data.length === 0) {
+    list.innerHTML = '<div style="color:var(--muted); font-size:0.85rem;">Noch nichts published diese Woche.</div>';
+    return;
+  }
+  list.innerHTML = data.map(r => `
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:0.85rem 1rem;">
+      <div>
+        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.2rem;">
+          <span>${TYPE_ICONS[r.type]}</span>
+          <span style="font-size:0.85rem; font-weight:500;">${TYPE_LABELS[r.type]}</span>
+          <span style="font-size:0.7rem; color:var(--muted);">· ${PLATFORM_LABELS[r.platform]}</span>
+        </div>
+        ${r.title ? `<div style="font-size:0.75rem; color:var(--muted);">${r.title}</div>` : ''}
+      </div>
+      <div style="font-size:0.7rem; color:var(--muted); white-space:nowrap;">
+        ${new Date(r.published_at + 'T12:00:00').toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'})}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── ACTIVE SESSION RECOVERY ──
+async function recoverActiveSession() {
+  const { data: { user } } = await SB.auth.getUser();
+  if (!user) return;
+  const { data } = await SB.from('tracker_sessions')
+    .select('*')
+    .eq('is_active', true)
+    .eq('created_by', user.id)
+    .single();
+  if (data) {
+    const elapsed = Math.floor((Date.now() - new Date(data.started_at).getTime()) / 1000);
+    await SB.from('tracker_sessions').update({
+      is_active: false,
+      ended_at: new Date().toISOString(),
+      total_seconds: elapsed,
+      focused_seconds: Math.floor(elapsed * 0.9),
+    }).eq('id', data.id);
+  }
+}
 
 // ── TRAINING STATE ──
 const MUSCLE_GROUPS = ['Brust', 'Rücken', 'Schultern', 'Arme', 'Beine', 'Core', 'Cardio', 'Full Body'];
