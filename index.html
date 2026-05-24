@@ -556,6 +556,13 @@ const SB = createClient(
 );
 
 // ── SHARED UTILITIES ──
+function escapeHtml(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
 function formatTime(s) {
   const h = Math.floor(s / 3600).toString().padStart(2, '0');
   const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
@@ -727,6 +734,9 @@ async function saveContent() {
     });
     loadContentLog();
     loadOverview();
+  } else {
+    showToast('Fehler beim Speichern — bitte nochmal versuchen');
+    console.error('Content save error:', error);
   }
 }
 
@@ -756,7 +766,7 @@ async function loadContentLog() {
           <span style="font-size:0.85rem; font-weight:500;">${fmt.label}</span>
         </div>
         <div style="font-size:0.7rem; color:var(--muted);">${fmt.platforms}</div>
-        ${r.title ? `<div style="font-size:0.75rem; color:var(--muted); margin-top:0.2rem;">${r.title}</div>` : ''}
+        ${r.title ? `<div style="font-size:0.75rem; color:var(--muted); margin-top:0.2rem;">${escapeHtml(r.title)}</div>` : ''}
       </div>
       <div style="font-size:0.7rem; color:var(--muted); white-space:nowrap;">
         ${new Date(r.published_at + 'T12:00:00').toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'})}
@@ -842,7 +852,7 @@ function trGetActiveSeconds() {
   return completed + current;
 }
 
-function trStart() {
+async function trStart() {
   if (!trSelectedMuscle) return;
   playClickSound('start'); triggerHaptic([15]);
   trState = 'active';
@@ -850,7 +860,7 @@ function trStart() {
   trActiveStart = new Date();
   trActiveSeconds = 0;
   trInterval = setInterval(renderTRTimers, 1000);
-  trCreateSession();
+  await trCreateSession();
   renderTRState();
   document.getElementById('tr-muscle-picker').classList.add('hidden');
   document.getElementById('tr-muscle-display').textContent = trSelectedMuscle.toUpperCase();
@@ -922,24 +932,26 @@ function trTogglePause() {
 }
 
 function showTRSummaryModal() {
-  const pct = trTotalSeconds > 0 ? Math.round((trActiveSeconds / trTotalSeconds) * 100) : 0;
+  const totalSec = trGetTotalSeconds();
+  const activeSec = trGetActiveSeconds();
+  const pct = totalSec > 0 ? Math.round((activeSec / totalSec) * 100) : 0;
   document.getElementById('tr-summary-content').innerHTML = `
     <div style="display:flex; flex-direction:column; gap:0.75rem;">
       <div style="display:flex; justify-content:space-between;">
         <span style="color:var(--muted)">Muskelgruppe</span>
-        <span style="color:var(--green); font-weight:500;">${trSelectedMuscle}</span>
+        <span style="color:var(--green); font-weight:500;">${escapeHtml(trSelectedMuscle)}</span>
       </div>
       <div style="display:flex; justify-content:space-between;">
         <span style="color:var(--muted)">Gesamt</span>
-        <span style="font-family:var(--font-mono)">${formatTime(trTotalSeconds)}</span>
+        <span style="font-family:var(--font-mono)">${formatTime(totalSec)}</span>
       </div>
       <div style="display:flex; justify-content:space-between;">
         <span style="color:var(--green)">Aktiv</span>
-        <span style="font-family:var(--font-mono); color:var(--green)">${formatTime(trActiveSeconds)} (${pct}%)</span>
+        <span style="font-family:var(--font-mono); color:var(--green)">${formatTime(activeSec)} (${pct}%)</span>
       </div>
       <div style="display:flex; justify-content:space-between;">
         <span style="color:var(--muted)">Pause / Talk</span>
-        <span style="font-family:var(--font-mono); color:var(--muted)">${formatTime(trTotalSeconds - trActiveSeconds)} (${100 - pct}%)</span>
+        <span style="font-family:var(--font-mono); color:var(--muted)">${formatTime(totalSec - activeSec)} (${100 - pct}%)</span>
       </div>
     </div>
   `;
@@ -959,6 +971,7 @@ async function trSave() {
 }
 
 async function trDiscard() {
+  clearInterval(trInterval); trInterval = null;
   document.getElementById('tr-summary-modal').classList.add('hidden');
   await trDiscardSession();
   trActiveSeconds = 0;
@@ -1234,7 +1247,7 @@ function dwGetFocusedSeconds() {
   return completed + current;
 }
 
-function dwStart() {
+async function dwStart() {
   playClickSound('start'); triggerHaptic([15]);
   dwStartLabel = document.getElementById('dw-label-start-input').value.trim();
   dwState = 'active';
@@ -1242,7 +1255,7 @@ function dwStart() {
   dwFocusStart = new Date();
   dwFocusedSeconds = 0;
   dwInterval = setInterval(renderDWTimers, 1000);
-  dwCreateSession();
+  await dwCreateSession();
   renderDWState();
   dwActivateMediaSession();
   dwUpdateBanner();
@@ -1388,7 +1401,7 @@ function showDWSummaryModal() {
       ${dwStartLabel ? `
       <div style="display:flex; justify-content:space-between;">
         <span style="color:var(--muted)">Label</span>
-        <span>${dwStartLabel}</span>
+        <span>${escapeHtml(dwStartLabel)}</span>
       </div>` : ''}
     </div>
   `;
@@ -1407,6 +1420,7 @@ async function dwSave() {
 }
 
 async function dwDiscard() {
+  clearInterval(dwInterval); dwInterval = null;
   document.getElementById('dw-summary-modal').classList.add('hidden');
   await dwDiscardSession();
   dwFocusedSeconds = 0;
@@ -1730,9 +1744,9 @@ async function loadOverview() {
       <div class="section-title">LETZTE NOTIZ</div>
       <div style="font-size:0.65rem; color:var(--muted); margin-bottom:0.4rem;">
         ${new Date(lastNote.started_at).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'})}
-        ${lastNote.label ? `· ${lastNote.label}` : ''}
+        ${lastNote.label ? `· ${escapeHtml(lastNote.label)}` : ''}
       </div>
-      <div style="font-size:0.82rem; color:var(--text); line-height:1.5;">${lastNote.notes}</div>
+      <div style="font-size:0.82rem; color:var(--text); line-height:1.5;">${escapeHtml(lastNote.notes)}</div>
     </div>` : ''}
     <div style="margin-top:0.75rem; text-align:center;">
       <button id="week-report-btn" onclick="copyWeekReport()"
@@ -1854,8 +1868,8 @@ function todoCard(t) {
         ${isDone?'<svg viewBox="0 0 12 12" fill="none" stroke="#000" stroke-width="2.5" width="12" height="12"><polyline points="2 6 5 9 10 3"/></svg>':''}
       </button>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:0.85rem;font-weight:500;margin-bottom:0.3rem;text-decoration:${isDone?'line-through':'none'};color:${isDone?'var(--muted)':'var(--text)'};">${t.title}</div>
-        ${t.detail?`<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.35rem;">${t.detail}</div>`:''}
+        <div style="font-size:0.85rem;font-weight:500;margin-bottom:0.3rem;text-decoration:${isDone?'line-through':'none'};color:${isDone?'var(--muted)':'var(--text)'};">${escapeHtml(t.title)}</div>
+        ${t.detail?`<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.35rem;">${escapeHtml(t.detail)}</div>`:''}
         <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
           <span style="font-size:0.65rem;padding:0.15rem 0.45rem;border-radius:4px;background:${cat.color}22;color:${cat.color};font-weight:500;">${cat.label}</span>
           <span style="font-size:0.65rem;padding:0.15rem 0.45rem;border-radius:4px;background:${rel.color}22;color:${rel.color};">${rel.label}</span>
@@ -2033,11 +2047,13 @@ async function confirmDone() {
   const actualMin = parseInt(document.getElementById('todo-actual-min')?.value);
   if (!actualMin||actualMin<1) { document.getElementById('todo-actual-min').style.borderColor='var(--red)'; return; }
   const id = pendingDoneId;
+  pendingDoneId = null; // prevent double-submit
   await SB.from('tracker_todos').update({ done:true, done_at:new Date().toISOString(), actual_min:actualMin }).eq('id', id);
   // auto-create next occurrence for recurring todos
   const { data: t } = await SB.from('tracker_todos').select('*').eq('id', id).single();
-  if (t?.recurring && t.due_date) {
-    const next = new Date(t.due_date + 'T12:00:00');
+  if (t?.recurring) {
+    const base = t.due_date || getLocalDateString();
+    const next = new Date(base + 'T12:00:00');
     if (t.recurring === 'daily')   next.setDate(next.getDate() + 1);
     else if (t.recurring === 'weekly') next.setDate(next.getDate() + 7);
     else if (t.recurring === 'monthly') next.setMonth(next.getMonth() + 1);
