@@ -1763,6 +1763,7 @@ const TODO_RELEVANCE = {
 };
 let todoView = 'today';
 let selectedRelevance = 'medium';
+let selectedRecurring = '';
 let pendingDoneId = null;
 let editingTodoId = null;
 let _todoActionsData = null;
@@ -1839,7 +1840,7 @@ function renderTodos(todos) {
       </div>
     </div>
   `;
-  setTimeout(() => selectRelevance(selectedRelevance), 10);
+  setTimeout(() => { selectRelevance(selectedRelevance); selectRecurring(selectedRecurring); }, 10);
 }
 
 function todoCard(t) {
@@ -1860,6 +1861,7 @@ function todoCard(t) {
           <span style="font-size:0.65rem;padding:0.15rem 0.45rem;border-radius:4px;background:${rel.color}22;color:${rel.color};">${rel.label}</span>
           ${t.estimated_min?`<span style="font-size:0.65rem;color:var(--muted);font-family:var(--font-mono);">~${t.estimated_min}min</span>`:''}
           ${t.actual_min?`<span style="font-size:0.65rem;color:var(--green);font-family:var(--font-mono);">${t.actual_min}min real</span>`:''}
+          ${t.recurring?`<span style="font-size:0.65rem;color:var(--accent);">🔁 ${{daily:'tägl.',weekly:'wöch.',monthly:'monatl.'}[t.recurring]||t.recurring}</span>`:''}
           ${t.due_date ? (() => {
             const now = new Date();
             const today = getLocalDateString();
@@ -1900,7 +1902,7 @@ function todoFormHTML(editData = null) {
     <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">GESCHÄTZTE ZEIT (Minuten, optional)</div>
     <input type="number" id="todo-estimated" placeholder="z.B. 45" min="1" max="999" value="${d.estimated_min||''}"
       style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-mono);font-size:0.9rem;width:100%;margin-bottom:0.75rem;outline:none;">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:1.25rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.75rem;">
       <div>
         <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">DATUM (optional)</div>
         <input type="date" id="todo-due-date" value="${d.due_date||today}" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.8rem;width:100%;outline:none;">
@@ -1910,11 +1912,31 @@ function todoFormHTML(editData = null) {
         <input type="time" id="todo-due-time" value="${d.due_time?d.due_time.slice(0,5):''}" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.8rem;width:100%;outline:none;">
       </div>
     </div>
+    <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">WIEDERHOLUNG</div>
+    <div style="display:flex;gap:0.4rem;margin-bottom:1.25rem;">
+      ${[['', 'Einmalig'], ['daily', 'Täglich'], ['weekly', 'Wöchentlich'], ['monthly', 'Monatlich']].map(([val, lbl]) => `
+        <button class="rec-btn" data-rec="${val}" onclick="selectRecurring('${val}')"
+          style="flex:1;padding:0.55rem 0;border-radius:8px;font-family:var(--font-ui);font-size:0.72rem;cursor:pointer;
+                 border:1px solid ${(d.recurring||'')=== val ? 'var(--accent)' : 'var(--border)'};
+                 background:${(d.recurring||'')=== val ? 'rgba(236,106,55,0.15)' : 'transparent'};
+                 color:${(d.recurring||'')=== val ? 'var(--accent)' : 'var(--muted)'};">
+          ${lbl}</button>`).join('')}
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
       <button onclick="closeTodoForm()" style="background:transparent;border:1px solid var(--border);border-radius:8px;padding:0.85rem;color:var(--muted);font-family:var(--font-ui);cursor:pointer;">Abbrechen</button>
       <button onclick="saveTodo()" style="background:var(--accent);border:none;border-radius:8px;padding:0.85rem;color:#000;font-family:var(--font-ui);font-weight:600;cursor:pointer;">Speichern</button>
     </div>
   `;
+}
+
+function selectRecurring(val) {
+  selectedRecurring = val;
+  document.querySelectorAll('.rec-btn').forEach(b => {
+    const active = b.dataset.rec === val;
+    b.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
+    b.style.background  = active ? 'rgba(236,106,55,0.15)' : 'transparent';
+    b.style.color       = active ? 'var(--accent)' : 'var(--muted)';
+  });
 }
 
 function selectRelevance(r) {
@@ -1936,10 +1958,11 @@ function selectRelevance(r) {
 function openTodoForm(editData = null) {
   editingTodoId = editData ? editData.id : null;
   selectedRelevance = editData ? (editData.relevance || 'medium') : 'medium';
+  selectedRecurring = editData ? (editData.recurring || '') : '';
   const modal = document.getElementById('todo-form-modal');
   modal.querySelector('div').innerHTML = todoFormHTML(editData);
   modal.classList.remove('hidden');
-  setTimeout(() => { document.getElementById('todo-title')?.focus(); selectRelevance(selectedRelevance); }, 50);
+  setTimeout(() => { document.getElementById('todo-title')?.focus(); selectRelevance(selectedRelevance); selectRecurring(selectedRecurring); }, 50);
 }
 function closeTodoForm() {
   editingTodoId = null;
@@ -1954,6 +1977,7 @@ async function saveTodo() {
     detail:        document.getElementById('todo-detail')?.value.trim()||null,
     category:      document.getElementById('todo-category')?.value||'andere',
     relevance:     selectedRelevance,
+    recurring:     selectedRecurring || null,
     estimated_min: document.getElementById('todo-estimated')?.value ? parseInt(document.getElementById('todo-estimated').value) : null,
     due_date:      document.getElementById('todo-due-date')?.value||null,
     due_time:      document.getElementById('todo-due-time')?.value||null,
@@ -2008,7 +2032,22 @@ function closeDoneModal() { pendingDoneId=null; document.getElementById('todo-do
 async function confirmDone() {
   const actualMin = parseInt(document.getElementById('todo-actual-min')?.value);
   if (!actualMin||actualMin<1) { document.getElementById('todo-actual-min').style.borderColor='var(--red)'; return; }
-  await SB.from('tracker_todos').update({ done:true, done_at:new Date().toISOString(), actual_min:actualMin }).eq('id', pendingDoneId);
+  const id = pendingDoneId;
+  await SB.from('tracker_todos').update({ done:true, done_at:new Date().toISOString(), actual_min:actualMin }).eq('id', id);
+  // auto-create next occurrence for recurring todos
+  const { data: t } = await SB.from('tracker_todos').select('*').eq('id', id).single();
+  if (t?.recurring && t.due_date) {
+    const next = new Date(t.due_date + 'T12:00:00');
+    if (t.recurring === 'daily')   next.setDate(next.getDate() + 1);
+    else if (t.recurring === 'weekly') next.setDate(next.getDate() + 7);
+    else if (t.recurring === 'monthly') next.setMonth(next.getMonth() + 1);
+    const { data: { user } } = await SB.auth.getUser();
+    await SB.from('tracker_todos').insert({
+      title: t.title, detail: t.detail, category: t.category, relevance: t.relevance,
+      recurring: t.recurring, estimated_min: t.estimated_min, due_time: t.due_time,
+      due_date: next.toISOString().split('T')[0], created_by: user.id,
+    });
+  }
   closeDoneModal();
   loadTodos();
 }
