@@ -30,6 +30,7 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    button { touch-action: manipulation; }
 
     body {
       background: var(--bg);
@@ -599,10 +600,7 @@ SB.auth.getSession().then(({ data: { session } }) => {
 });
 initTabListeners();
 
-// iOS: prevent double-tap zoom on buttons
-document.querySelectorAll('button').forEach(btn => {
-  btn.addEventListener('touchend', e => e.preventDefault());
-});
+// iOS: prevent double-tap zoom via CSS (touch-action safer than e.preventDefault on touchend)
 
 document.getElementById('login-password').addEventListener('keydown', e => {
   if (e.key === 'Enter') handleLogin();
