@@ -1469,6 +1469,9 @@ const TODO_RELEVANCE = {
 let todoView = 'today';
 let selectedRelevance = 'medium';
 let pendingDoneId = null;
+let editingTodoId = null;
+let _todoActionsData = null;
+let _todoCache = [];
 
 async function loadTodos() {
   const { data: { user } } = await SB.auth.getUser();
@@ -1486,6 +1489,7 @@ async function loadTodos() {
 }
 
 function renderTodos(todos) {
+  _todoCache = todos;
   const open = todos.filter(t => !t.done);
   const done = todos.filter(t => t.done);
   document.getElementById('tab-todos').innerHTML = `
@@ -1527,6 +1531,15 @@ function renderTodos(todos) {
         </div>
       </div>
     </div>
+    <div id="todo-actions-sheet" class="hidden"
+      style="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;display:flex;align-items:flex-end;justify-content:center;"
+      onclick="closeTodoActions()">
+      <div style="background:var(--surface);border-radius:16px 16px 0 0;padding:1.25rem;width:100%;max-width:480px;border-top:1px solid var(--border);" onclick="event.stopPropagation()">
+        <div id="todo-actions-title" style="font-size:0.75rem;color:var(--muted);margin-bottom:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+        <button onclick="editTodoFromActions()" style="display:block;width:100%;background:none;border:none;color:var(--text);font-family:var(--font-ui);font-size:0.95rem;padding:0.85rem 0;text-align:left;cursor:pointer;border-bottom:1px solid var(--border);touch-action:manipulation;">✏️ Bearbeiten</button>
+        <button onclick="deleteTodoFromActions()" style="display:block;width:100%;background:none;border:none;color:var(--red);font-family:var(--font-ui);font-size:0.95rem;padding:0.85rem 0;text-align:left;cursor:pointer;touch-action:manipulation;">🗑 Löschen</button>
+      </div>
+    </div>
   `;
   setTimeout(() => selectRelevance(selectedRelevance), 10);
 }
@@ -1537,7 +1550,7 @@ function todoCard(t) {
   const isDone = t.done;
   return `<div style="background:var(--surface);border:1px solid ${isDone?'var(--border)':cat.color+'44'};border-left:3px solid ${isDone?'var(--border)':cat.color};border-radius:10px;padding:0.85rem 1rem;margin-bottom:0.5rem;opacity:${isDone?'0.5':'1'};">
     <div style="display:flex;align-items:flex-start;gap:0.75rem;">
-      <button onclick="${isDone?'':'openDoneModal('+t.id+','+(t.estimated_min||0)+')'}"
+      <button onclick="${isDone?'':'openDoneModal('+t.id+','+(t.estimated_min||0)+')'}" touch-action="manipulation"
         style="flex-shrink:0;width:22px;height:22px;border-radius:6px;margin-top:2px;border:2px solid ${isDone?'var(--green)':cat.color};background:${isDone?'var(--green)':'transparent'};cursor:${isDone?'default':'pointer'};display:flex;align-items:center;justify-content:center;">
         ${isDone?'<svg viewBox="0 0 12 12" fill="none" stroke="#000" stroke-width="2.5" width="12" height="12"><polyline points="2 6 5 9 10 3"/></svg>':''}
       </button>
@@ -1552,21 +1565,23 @@ function todoCard(t) {
           ${t.due_date?`<span style="font-size:0.65rem;color:var(--muted);">📅 ${new Date(t.due_date+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})}${t.due_time?' '+t.due_time.slice(0,5):''}</span>`:''}
         </div>
       </div>
+      <button onclick="openTodoActions(${t.id})" style="flex-shrink:0;background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;padding:0 0.25rem;touch-action:manipulation;line-height:1;">⋯</button>
     </div>
   </div>`;
 }
 
-function todoFormHTML() {
+function todoFormHTML(editData = null) {
   const today = new Date().toISOString().split('T')[0];
+  const d = editData || {};
   return `
-    <div style="font-size:0.7rem;letter-spacing:0.15em;color:var(--muted);margin-bottom:1.25rem;">NEUES TO-DO</div>
-    <input type="text" id="todo-title" placeholder="Was muss erledigt werden?"
+    <div style="font-size:0.7rem;letter-spacing:0.15em;color:var(--muted);margin-bottom:1.25rem;">${editData ? 'TO-DO BEARBEITEN' : 'NEUES TO-DO'}</div>
+    <input type="text" id="todo-title" placeholder="Was muss erledigt werden?" value="${d.title||''}"
       style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.85rem;color:var(--text);font-family:var(--font-ui);font-size:0.95rem;width:100%;margin-bottom:0.75rem;outline:none;">
-    <input type="text" id="todo-detail" placeholder="Details (optional)"
+    <input type="text" id="todo-detail" placeholder="Details (optional)" value="${d.detail||''}"
       style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.85rem;width:100%;margin-bottom:0.75rem;outline:none;">
     <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">KATEGORIE</div>
     <select id="todo-category" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.85rem;width:100%;margin-bottom:0.75rem;outline:none;">
-      ${Object.entries(TODO_CATEGORIES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}
+      ${Object.entries(TODO_CATEGORIES).map(([k,v])=>`<option value="${k}" ${d.category===k?'selected':''}>${v.label}</option>`).join('')}
     </select>
     <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">RELEVANZ</div>
     <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">
@@ -1576,16 +1591,16 @@ function todoFormHTML() {
           ${v.label}</button>`).join('')}
     </div>
     <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">GESCHÄTZTE ZEIT (Minuten, optional)</div>
-    <input type="number" id="todo-estimated" placeholder="z.B. 45" min="1" max="999"
+    <input type="number" id="todo-estimated" placeholder="z.B. 45" min="1" max="999" value="${d.estimated_min||''}"
       style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-mono);font-size:0.9rem;width:100%;margin-bottom:0.75rem;outline:none;">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:1.25rem;">
       <div>
         <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">DATUM (optional)</div>
-        <input type="date" id="todo-due-date" value="${today}" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.8rem;width:100%;outline:none;">
+        <input type="date" id="todo-due-date" value="${d.due_date||today}" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.8rem;width:100%;outline:none;">
       </div>
       <div>
         <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">UHRZEIT (optional)</div>
-        <input type="time" id="todo-due-time" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.8rem;width:100%;outline:none;">
+        <input type="time" id="todo-due-time" value="${d.due_time?d.due_time.slice(0,5):''}" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.8rem;width:100%;outline:none;">
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
@@ -1611,18 +1626,23 @@ function selectRelevance(r) {
   }
 }
 
-function openTodoForm() {
-  selectedRelevance = 'medium';
-  document.getElementById('todo-form-modal').classList.remove('hidden');
-  setTimeout(() => { document.getElementById('todo-title')?.focus(); selectRelevance('medium'); }, 50);
+function openTodoForm(editData = null) {
+  editingTodoId = editData ? editData.id : null;
+  selectedRelevance = editData ? (editData.relevance || 'medium') : 'medium';
+  const modal = document.getElementById('todo-form-modal');
+  modal.querySelector('div').innerHTML = todoFormHTML(editData);
+  modal.classList.remove('hidden');
+  setTimeout(() => { document.getElementById('todo-title')?.focus(); selectRelevance(selectedRelevance); }, 50);
 }
-function closeTodoForm() { document.getElementById('todo-form-modal').classList.add('hidden'); }
+function closeTodoForm() {
+  editingTodoId = null;
+  document.getElementById('todo-form-modal').classList.add('hidden');
+}
 
 async function saveTodo() {
   const title = document.getElementById('todo-title')?.value.trim();
   if (!title) { document.getElementById('todo-title').style.borderColor='var(--red)'; return; }
-  const { data: { user } } = await SB.auth.getUser();
-  const { error } = await SB.from('tracker_todos').insert({
+  const payload = {
     title,
     detail:        document.getElementById('todo-detail')?.value.trim()||null,
     category:      document.getElementById('todo-category')?.value||'andere',
@@ -1630,10 +1650,42 @@ async function saveTodo() {
     estimated_min: document.getElementById('todo-estimated')?.value ? parseInt(document.getElementById('todo-estimated').value) : null,
     due_date:      document.getElementById('todo-due-date')?.value||null,
     due_time:      document.getElementById('todo-due-time')?.value||null,
-    created_by:    user.id,
-  });
+  };
+  let error;
+  if (editingTodoId) {
+    ({ error } = await SB.from('tracker_todos').update(payload).eq('id', editingTodoId));
+  } else {
+    const { data: { user } } = await SB.auth.getUser();
+    ({ error } = await SB.from('tracker_todos').insert({ ...payload, created_by: user.id }));
+  }
   if (!error) { closeTodoForm(); loadTodos(); }
   else console.error('Todo error:', error);
+}
+
+function openTodoActions(todoId) {
+  const allTodos = document.querySelectorAll('[data-todo-id]');
+  // find data from rendered cards via stored cache
+  const t = _todoCache?.find(x => x.id === todoId);
+  _todoActionsData = t || { id: todoId };
+  const sheet = document.getElementById('todo-actions-sheet');
+  document.getElementById('todo-actions-title').textContent = t ? t.title : '';
+  sheet.classList.remove('hidden');
+}
+function closeTodoActions() {
+  _todoActionsData = null;
+  document.getElementById('todo-actions-sheet').classList.add('hidden');
+}
+function editTodoFromActions() {
+  const data = _todoActionsData;
+  closeTodoActions();
+  if (data) openTodoForm(data);
+}
+async function deleteTodoFromActions() {
+  const data = _todoActionsData;
+  closeTodoActions();
+  if (!data) return;
+  await SB.from('tracker_todos').delete().eq('id', data.id);
+  loadTodos();
 }
 
 function openDoneModal(todoId, estimatedMin) {
