@@ -493,6 +493,9 @@
 
     <!-- TO-DOS TAB -->
     <div class="tab-panel" id="tab-todos"></div>
+
+    <!-- SETTINGS TAB -->
+    <div class="tab-panel" id="tab-settings"></div>
   </div>
 
   <nav class="bottom-nav">
@@ -533,6 +536,13 @@
         <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
       </svg>
       To-dos
+    </button>
+    <button class="nav-item" data-tab="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
+      Settings
     </button>
   </nav>
 </div>
@@ -634,6 +644,7 @@ const TAB_ON_ACTIVATE = {
   outreach: () => loadOutreach('today'),
   content:  () => loadContentLog(),
   todos:    () => loadTodos(),
+  settings: () => loadSettings(),
 };
 
 function initTabs() {
@@ -1532,7 +1543,8 @@ async function loadOverview() {
     const dateToCheck = new Date();
     dateToCheck.setDate(dateToCheck.getDate() - i);
     const d = getLocalDateString(dateToCheck);
-    if ((dwByDate[d] || 0) >= 3600) dwStreak++;
+    const streakMinSec = parseFloat(localStorage.getItem('dw_streak_min_hours') || '1') * 3600;
+    if ((dwByDate[d] || 0) >= streakMinSec) dwStreak++;
     else if (i > 0) break; // gap — stop (don't break on today if today not yet done)
   }
 
@@ -2012,6 +2024,122 @@ function editDWGoal() {
   }
 }
 
+// ── SETTINGS ──
+function loadSettings() {
+  const dwGoal     = localStorage.getItem('dw_weekly_goal_hours') || '20';
+  const orGoal     = localStorage.getItem('outreach_daily_goal')  || '50';
+  const streakMin  = localStorage.getItem('dw_streak_min_hours')  || '1';
+  const hapticOn   = localStorage.getItem('haptic_enabled')  !== 'false';
+  const audioOn    = localStorage.getItem('audio_enabled')   !== 'false';
+
+  function settingRow(label, sub, inputHtml) {
+    return `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 0; border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-size:0.9rem;">${label}</div>
+          <div style="font-size:0.7rem; color:var(--muted); margin-top:0.15rem;">${sub}</div>
+        </div>
+        ${inputHtml}
+      </div>`;
+  }
+
+  function numInput(id, val, unit) {
+    return `<div style="display:flex; align-items:center; gap:0.4rem;">
+      <input id="${id}" type="number" value="${val}" min="1"
+        style="width:52px; background:var(--bg); border:1px solid var(--border); border-radius:6px;
+               padding:0.4rem 0.5rem; color:var(--text); font-family:var(--font-mono); font-size:0.9rem;
+               text-align:center; outline:none;"
+        oninput="saveSetting('${id}', this.value)">
+      <span style="font-size:0.75rem; color:var(--muted);">${unit}</span>
+    </div>`;
+  }
+
+  function toggle(id, checked) {
+    return `<label style="position:relative; display:inline-block; width:42px; height:24px; cursor:pointer;">
+      <input type="checkbox" id="${id}" ${checked ? 'checked' : ''}
+        style="opacity:0; width:0; height:0;"
+        onchange="saveSetting('${id}', this.checked)">
+      <span style="position:absolute; inset:0; background:${checked ? 'var(--accent)' : 'var(--border)'};
+        border-radius:24px; transition:background 0.2s;" id="${id}-track"></span>
+      <span style="position:absolute; top:3px; left:${checked ? '21px' : '3px'};
+        width:18px; height:18px; background:#fff; border-radius:50%;
+        transition:left 0.2s;" id="${id}-thumb"></span>
+    </label>`;
+  }
+
+  const links = [
+    { label: 'RAIS Website',  icon: '🌐', url: 'https://raisolutions.de' },
+    { label: 'RAIS CRM',      icon: '📞', url: 'https://crm.raisolutions.de' },
+    { label: 'Eckstein CMS',  icon: '🎙', url: 'https://cms.ecksteinpodcast.de' },
+  ];
+
+  document.getElementById('tab-settings').innerHTML = `
+    <div class="card" style="margin-bottom:0.75rem;">
+      <div class="section-title">ZIELE</div>
+      ${settingRow('Deep Work Wochenziel', 'Fokus-Stunden pro Woche', numInput('dw_weekly_goal_hours', dwGoal, 'h'))}
+      ${settingRow('Outreach Tagesziel', 'Leads gespielt pro Tag', numInput('outreach_daily_goal', orGoal, 'Leads'))}
+      ${settingRow('Streak-Schwelle', 'Mindest-Fokuszeit für einen Streak-Tag', numInput('dw_streak_min_hours', streakMin, 'h'))}
+    </div>
+    <div class="card" style="margin-bottom:0.75rem;">
+      <div class="section-title">FEEDBACK</div>
+      ${settingRow('Haptik', 'Vibration bei Timer & Navigation', toggle('haptic_enabled', hapticOn))}
+      ${settingRow('Audio', 'Click-Sound bei Interaktionen', toggle('audio_enabled', audioOn))}
+    </div>
+    <div class="card" style="margin-bottom:0.75rem;">
+      <div class="section-title">SCHNELLZUGRIFF</div>
+      ${links.map(l => `
+        <a href="${l.url}" target="_blank" rel="noopener"
+          style="display:flex; align-items:center; justify-content:space-between;
+                 padding:0.9rem 0; border-bottom:1px solid var(--border);
+                 text-decoration:none; color:var(--text);">
+          <div style="display:flex; align-items:center; gap:0.6rem;">
+            <span style="font-size:1rem;">${l.icon}</span>
+            <span style="font-size:0.9rem;">${l.label}</span>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" width="14" height="14">
+            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        </a>
+      `).join('')}
+    </div>
+    <div class="card">
+      <div class="section-title">KONTO</div>
+      <div style="padding:0.9rem 0; border-bottom:1px solid var(--border);">
+        <div style="font-size:0.7rem; color:var(--muted); margin-bottom:0.25rem;">EINGELOGGT ALS</div>
+        <div id="settings-email" style="font-size:0.85rem; font-family:var(--font-mono); color:var(--muted);">…</div>
+      </div>
+      <div style="padding:0.9rem 0;">
+        <button onclick="handleLogout()"
+          style="background:transparent; border:1px solid var(--red); border-radius:8px;
+                 padding:0.6rem 1.2rem; color:var(--red); font-family:var(--font-ui);
+                 font-size:0.85rem; cursor:pointer; touch-action:manipulation;">
+          Logout
+        </button>
+      </div>
+    </div>
+  `;
+
+  SB.auth.getUser().then(({ data: { user } }) => {
+    const el = document.getElementById('settings-email');
+    if (el && user) el.textContent = user.email;
+  });
+}
+
+function saveSetting(key, value) {
+  if (typeof value === 'boolean') {
+    localStorage.setItem(key, value.toString());
+    // update toggle visual without re-render
+    const track = document.getElementById(key + '-track');
+    const thumb  = document.getElementById(key + '-thumb');
+    if (track) track.style.background = value ? 'var(--accent)' : 'var(--border)';
+    if (thumb)  thumb.style.left = value ? '21px' : '3px';
+  } else {
+    const n = parseFloat(value);
+    if (!isNaN(n) && n > 0) localStorage.setItem(key, n.toString());
+  }
+}
+
 // ── OUTREACH TAGESZIEL ──
 function editOutreachGoal() {
   const current = localStorage.getItem('outreach_daily_goal') || '50';
@@ -2076,6 +2204,7 @@ function showToast(msg) {
 let _audioCtx = null;
 function playClickSound(type = 'tap') {
   if (document.hidden) return;
+  if (localStorage.getItem('audio_enabled') === 'false') return;
   try {
     _audioCtx = _audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     const o = _audioCtx.createOscillator();
@@ -2095,6 +2224,7 @@ function playClickSound(type = 'tap') {
 }
 
 function triggerHaptic(pattern) {
+  if (localStorage.getItem('haptic_enabled') === 'false') return;
   if (navigator.vibrate) navigator.vibrate(pattern);
 }
 
