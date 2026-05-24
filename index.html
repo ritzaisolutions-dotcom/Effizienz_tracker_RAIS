@@ -534,12 +534,45 @@ function formatTime(s) {
   return `${h}:${m}:${sec}`;
 }
 
+// Get YYYY-MM-DD in local timezone (bulletproof against UTC shift near midnight)
+function getLocalDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Get local midnight as UTC ISO string for Supabase queries
+function getLocalMidnightISO() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+// Get Monday of current week as local date string
 function getWeekStart() {
   const d = new Date();
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(new Date().setDate(diff));
-  return monday.toISOString().split('T')[0];
+  const monday = new Date(d.setDate(diff));
+  return getLocalDateString(monday);
+}
+
+// Get Monday of current week as local midnight UTC ISO string for queries
+function getLocalWeekStartISO() {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  return monday.toISOString();
+}
+
+// Get 1st day of current month as local midnight UTC ISO string for queries
+function getLocalMonthStartISO() {
+  const d = new Date();
+  const firstDay = new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
+  return firstDay.toISOString();
 }
 
 // ── AUTH ──
@@ -643,7 +676,7 @@ async function saveContent() {
     type: fmt.type,
     platform: contentFormat,
     title: title,
-    published_at: new Date().toISOString().split('T')[0],
+    published_at: getLocalDateString(),
     created_by: user.id
   });
   if (!error) {
@@ -703,48 +736,86 @@ async function loadContentLog() {
 async function recoverActiveSession() {
   const { data: { user } } = await SB.auth.getUser();
   if (!user) return;
-  const { data } = await SB.from('tracker_sessions')
+
+  // 1. Recover active Deep Work session
+  const { data: dwData } = await SB.from('tracker_sessions')
     .select('*')
     .eq('type', 'deep_work')
     .eq('is_active', true)
     .eq('created_by', user.id)
     .single();
-  if (!data) return;
 
-  // Resume the running session — wallclock-based, no tick accumulation needed
-  dwState = 'active';
-  dwStartedAt = new Date(data.started_at);
-  dwFocusStart = new Date(data.started_at); // treat all elapsed time as focused
-  dwFocusedSeconds = 0;
-  dwCurrentSessionId = data.id;
-  dwStartLabel = data.label || '';
-  dwInterval = setInterval(renderDWTimers, 1000);
-  renderDWState();
-  renderDWTimers();
-  dwUpdateBanner();
-  dwActivateMediaSession();
+  if (dwData) {
+    dwState = 'active';
+    dwStartedAt = new Date(dwData.started_at);
+    dwFocusStart = new Date();
+    const elapsed = Math.floor((Date.now() - dwStartedAt.getTime()) / 1000);
+    dwFocusedSeconds = elapsed;
+    dwStartLabel = dwData.label || '';
+    
+    dwInterval = setInterval(renderDWTimers, 1000);
+    renderDWState();
+    renderDWTimers();
+    dwUpdateBanner();
+    dwActivateMediaSession();
+    return;
+  }
+
+  // 2. Recover active Training session
+  const { data: trData } = await SB.from('tracker_sessions')
+    .select('*')
+    .eq('type', 'training')
+    .eq('is_active', true)
+    .eq('created_by', user.id)
+    .single();
+
+  if (trData) {
+    trState = 'active';
+    trStartedAt = new Date(trData.started_at);
+    trActiveStart = new Date();
+    const elapsed = Math.floor((Date.now() - trStartedAt.getTime()) / 1000);
+    trActiveSeconds = elapsed;
+    trSelectedMuscle = trData.label;
+
+    trInterval = setInterval(renderTRTimers, 1000);
+    renderTRState();
+    renderTRTimers();
+
+    document.getElementById('tr-muscle-picker').classList.add('hidden');
+    document.getElementById('tr-muscle-display').textContent = trSelectedMuscle.toUpperCase();
+    return;
+  }
 }
 
 // ── TRAINING STATE ──
 const MUSCLE_GROUPS = ['Brust', 'Rücken', 'Schultern', 'Arme', 'Beine', 'Core', 'Cardio', 'Full Body', 'Kampfsport'];
 
 let trState = 'idle';
-let trTotalSeconds = 0;
-let trActiveSeconds = 0;
-let trTotalInterval = null;
-let trActiveInterval = null;
-let trStartedAt = null;
+let trStartedAt = null;       // when total timer started
+let trActiveStart = null;     // when current active segment started
+let trActiveSeconds = 0;      // accumulated active seconds from completed segments
+let trInterval = null;
 let trCurrentSessionId = null;
 let trSelectedMuscle = null;
+
+function trGetTotalSeconds() {
+  if (!trStartedAt) return 0;
+  return Math.floor((Date.now() - trStartedAt.getTime()) / 1000);
+}
+function trGetActiveSeconds() {
+  const completed = trActiveSeconds;
+  const current = (trState === 'active' && trActiveStart)
+    ? Math.floor((Date.now() - trActiveStart.getTime()) / 1000) : 0;
+  return completed + current;
+}
 
 function trStart() {
   if (!trSelectedMuscle) return;
   trState = 'active';
   trStartedAt = new Date();
-  trTotalSeconds = 0;
+  trActiveStart = new Date();
   trActiveSeconds = 0;
-  trTotalInterval = setInterval(() => { trTotalSeconds++; renderTRTimers(); }, 1000);
-  trActiveInterval = setInterval(() => { trActiveSeconds++; }, 1000);
+  trInterval = setInterval(renderTRTimers, 1000);
   trCreateSession();
   renderTRState();
   document.getElementById('tr-muscle-picker').classList.add('hidden');
@@ -753,29 +824,36 @@ function trStart() {
 
 function trPause() {
   if (trState !== 'active') return;
+  trActiveSeconds += Math.floor((Date.now() - trActiveStart.getTime()) / 1000);
+  trActiveStart = null;
   trState = 'paused';
-  clearInterval(trActiveInterval);
   renderTRState();
 }
 
 function trResume() {
   if (trState !== 'paused') return;
+  trActiveStart = new Date();
   trState = 'active';
-  trActiveInterval = setInterval(() => { trActiveSeconds++; }, 1000);
   renderTRState();
 }
 
 function trEnd() {
-  clearInterval(trTotalInterval);
-  clearInterval(trActiveInterval);
+  clearInterval(trInterval);
+  trInterval = null;
+  if (trState === 'active' && trActiveStart) {
+    trActiveSeconds += Math.floor((Date.now() - trActiveStart.getTime()) / 1000);
+    trActiveStart = null;
+  }
   trState = 'idle';
   showTRSummaryModal();
 }
 
 function renderTRTimers() {
-  document.getElementById('tr-total').textContent = formatTime(trTotalSeconds);
-  document.getElementById('tr-active').textContent = formatTime(trActiveSeconds);
-  document.getElementById('tr-pause').textContent = formatTime(trTotalSeconds - trActiveSeconds);
+  const total = trGetTotalSeconds();
+  const active = trGetActiveSeconds();
+  document.getElementById('tr-total').textContent = formatTime(total);
+  document.getElementById('tr-active').textContent = formatTime(active);
+  document.getElementById('tr-pause').textContent = formatTime(total - active);
 }
 
 function renderTRState() {
@@ -836,7 +914,9 @@ function showTRSummaryModal() {
 async function trSave() {
   document.getElementById('tr-summary-modal').classList.add('hidden');
   await trSaveSession();
-  trTotalSeconds = 0; trActiveSeconds = 0;
+  trActiveSeconds = 0;
+  trStartedAt = null;
+  trActiveStart = null;
   renderTRTimers();
   renderTRState();
   initMusclePicker();
@@ -845,7 +925,9 @@ async function trSave() {
 async function trDiscard() {
   document.getElementById('tr-summary-modal').classList.add('hidden');
   await trDiscardSession();
-  trTotalSeconds = 0; trActiveSeconds = 0;
+  trActiveSeconds = 0;
+  trStartedAt = null;
+  trActiveStart = null;
   renderTRTimers();
   renderTRState();
   initMusclePicker();
@@ -868,8 +950,8 @@ async function trSaveSession() {
   if (!trCurrentSessionId) return;
   await SB.from('tracker_sessions').update({
     ended_at: new Date().toISOString(),
-    total_seconds: trTotalSeconds,
-    focused_seconds: trActiveSeconds,
+    total_seconds: trGetTotalSeconds(),
+    focused_seconds: trGetActiveSeconds(),
     is_active: false,
     is_paused: false
   }).eq('id', trCurrentSessionId);
@@ -885,12 +967,12 @@ async function trDiscardSession() {
 }
 
 async function loadTRToday() {
-  const today = new Date().toISOString().split('T')[0];
+  const todayISO = getLocalMidnightISO();
   const { data } = await SB.from('tracker_sessions')
     .select('*')
     .eq('type', 'training')
     .eq('is_active', false)
-    .gte('started_at', today + 'T00:00:00+00:00')
+    .gte('started_at', todayISO)
     .order('started_at', { ascending: false });
 
   const list = document.getElementById('tr-today-list');
@@ -960,14 +1042,13 @@ function getStatusColor(s) { return STATUS_AMPEL[s]?.color || 'var(--muted)'; }
 function getStatusTier(s)  { return STATUS_AMPEL[s]?.tier  || 'neutral'; }
 
 async function loadOutreach(period = 'today') {
-  const now = new Date();
   let fromDate;
   if (period === 'today') {
-    fromDate = now.toISOString().split('T')[0] + 'T00:00:00+00:00';
+    fromDate = getLocalMidnightISO();
   } else if (period === 'week') {
-    fromDate = getWeekStart() + 'T00:00:00+00:00';
+    fromDate = getLocalWeekStartISO();
   } else {
-    fromDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0] + 'T00:00:00+00:00';
+    fromDate = getLocalMonthStartISO();
   }
 
   const { data: sessions } = await SB
@@ -1314,12 +1395,12 @@ async function dwDiscardSession() {
 }
 
 async function loadDWToday() {
-  const today = new Date().toISOString().split('T')[0];
+  const todayISO = getLocalMidnightISO();
   const { data } = await SB.from('tracker_sessions')
     .select('*')
     .eq('type', 'deep_work')
     .eq('is_active', false)
-    .gte('started_at', today + 'T00:00:00+00:00')
+    .gte('started_at', todayISO)
     .order('started_at', { ascending: false });
 
   const list = document.getElementById('dw-today-list');
@@ -1350,11 +1431,14 @@ async function loadDWToday() {
 
 // ── OVERVIEW ──
 async function loadOverview() {
-  const today = new Date().toISOString().split('T')[0];
-  const weekStart = getWeekStart();
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+  const todayISO = getLocalMidnightISO();
+  const weekStartISO = getLocalWeekStartISO();
+  const monthStartISO = getLocalMonthStartISO();
 
-  const streak60Start = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const streak60Start = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+  streak60Start.setHours(0, 0, 0, 0);
+  const streak60StartISO = streak60Start.toISOString();
+
   const [
     { data: dwToday },
     { data: trainToday },
@@ -1366,15 +1450,15 @@ async function loadOverview() {
     { data: allSessionsMonth },
     { data: streakSessions }
   ] = await Promise.all([
-    SB.from('tracker_sessions').select('focused_seconds').eq('type','deep_work').eq('is_active',false).gte('started_at', today + 'T00:00:00+00:00'),
-    SB.from('tracker_sessions').select('focused_seconds').eq('type','training').eq('is_active',false).gte('started_at', today + 'T00:00:00+00:00'),
-    SB.from('crm_sessions').select('leads_played').gte('started_at', today + 'T00:00:00+00:00'),
-    SB.from('tracker_content_log').select('type').gte('published_at', weekStart),
-    SB.from('tracker_sessions').select('started_at, focused_seconds, type').eq('is_active',false).gte('started_at', weekStart + 'T00:00:00+00:00').order('started_at'),
-    SB.from('tracker_sessions').select('total_seconds, focused_seconds').eq('is_active',false).gte('started_at', today + 'T00:00:00+00:00'),
-    SB.from('tracker_sessions').select('total_seconds, focused_seconds').eq('is_active',false).gte('started_at', weekStart + 'T00:00:00+00:00'),
-    SB.from('tracker_sessions').select('total_seconds, focused_seconds').eq('is_active',false).gte('started_at', monthStart + 'T00:00:00+00:00'),
-    SB.from('tracker_sessions').select('started_at, focused_seconds').eq('type','deep_work').eq('is_active',false).gte('started_at', streak60Start + 'T00:00:00+00:00')
+    SB.from('tracker_sessions').select('focused_seconds').eq('type','deep_work').eq('is_active',false).gte('started_at', todayISO),
+    SB.from('tracker_sessions').select('focused_seconds').eq('type','training').eq('is_active',false).gte('started_at', todayISO),
+    SB.from('crm_sessions').select('leads_played').gte('started_at', todayISO),
+    SB.from('tracker_content_log').select('type').gte('published_at', getWeekStart()),
+    SB.from('tracker_sessions').select('started_at, focused_seconds, type').eq('is_active',false).gte('started_at', weekStartISO).order('started_at'),
+    SB.from('tracker_sessions').select('total_seconds, focused_seconds').eq('is_active',false).gte('started_at', todayISO),
+    SB.from('tracker_sessions').select('total_seconds, focused_seconds').eq('is_active',false).gte('started_at', weekStartISO),
+    SB.from('tracker_sessions').select('total_seconds, focused_seconds').eq('is_active',false).gte('started_at', monthStartISO),
+    SB.from('tracker_sessions').select('started_at, focused_seconds').eq('type','deep_work').eq('is_active',false).gte('started_at', streak60StartISO)
   ]);
 
   const dwTodayTotal = (dwToday || []).reduce((s, r) => s + (r.focused_seconds || 0), 0);
@@ -1390,14 +1474,15 @@ async function loadOverview() {
   });
   let dwStreak = 0;
   for (let i = 0; i <= 60; i++) {
-    const d = new Date(Date.now() - i * 86400000).toISOString().split('T')[0];
+    const dateToCheck = new Date();
+    dateToCheck.setDate(dateToCheck.getDate() - i);
+    const d = getLocalDateString(dateToCheck);
     if ((dwByDate[d] || 0) >= 3600) dwStreak++;
     else if (i > 0) break; // gap — stop (don't break on today if today not yet done)
   }
 
   // DW Wochenziel
   const dwWeekGoalHours = parseFloat(localStorage.getItem('dw_weekly_goal_hours') || '20');
-  const dwWeekFocusSec = (allSessionsWeek || []).filter ? 0 : 0; // computed below from dwWeek
   const dwWeekTotal = (dwWeek || []).filter(r => r.type === 'deep_work').reduce((s, r) => s + (r.focused_seconds || 0), 0);
   const dwWeekGoalSec = dwWeekGoalHours * 3600;
   const dwWeekPct = Math.min(100, Math.round((dwWeekTotal / dwWeekGoalSec) * 100));
@@ -1548,13 +1633,16 @@ let _todoCache = [];
 
 async function loadTodos() {
   const { data: { user } } = await SB.auth.getUser();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   let query = SB.from('tracker_todos').select('*').eq('created_by', user.id)
     .order('done', { ascending: true }).order('created_at', { ascending: false });
   if (todoView === 'today') {
     query = query.or(`due_date.eq.${today},due_date.is.null`).eq('done', false);
   } else {
-    query = query.or(`done.eq.false,done_at.gte.${new Date(Date.now()-7*24*60*60*1000).toISOString()}`);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    query = query.or(`done.eq.false,done_at.gte.${sevenDaysAgo.toISOString()}`);
   }
   const { data, error } = await query;
   if (error) { console.error(error); return; }
@@ -1637,7 +1725,7 @@ function todoCard(t) {
           ${t.actual_min?`<span style="font-size:0.65rem;color:var(--green);font-family:var(--font-mono);">${t.actual_min}min real</span>`:''}
           ${t.due_date ? (() => {
             const now = new Date();
-            const today = now.toISOString().split('T')[0];
+            const today = getLocalDateString();
             const dueDateTime = new Date(t.due_date + 'T' + (t.due_time || '23:59:00'));
             const isOverdue = !isDone && dueDateTime < now;
             const isToday = !isDone && t.due_date === today && !isOverdue;
