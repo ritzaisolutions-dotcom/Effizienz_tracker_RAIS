@@ -264,11 +264,12 @@
       <!-- IDLE STATE -->
       <div id="dw-idle" class="dw-state">
         <div class="section-title">Deep Work Session</div>
-        <div class="card" style="text-align:center; padding: 2.5rem 1.25rem;">
-          <div style="font-size:0.8rem; color:var(--muted); margin-bottom:2rem; letter-spacing:0.1em;">
-            BEREIT ZU STARTEN
-          </div>
-          <button class="btn-primary" onclick="dwStart()" style="max-width:200px; margin:0 auto;">
+        <div class="card" style="padding: 1.5rem 1.25rem;">
+          <input type="text" id="dw-label-start-input" placeholder="Was arbeitest du? (optional)"
+            style="background:var(--bg); border:1px solid var(--border); border-radius:8px;
+                   padding:0.75rem; color:var(--text); font-family:var(--font-ui);
+                   font-size:0.9rem; width:100%; margin-bottom:1rem; outline:none; display:block;">
+          <button class="btn-primary" onclick="dwStart()" style="max-width:100%;">
             ▶ SESSION STARTEN
           </button>
         </div>
@@ -297,21 +298,18 @@
           <div id="dw-status-indicator" style="text-align:center; font-size:0.75rem; letter-spacing:0.15em; color:var(--accent); margin-bottom:1.5rem;">
             ● AKTIV
           </div>
-          <input type="text" id="dw-label-input" placeholder="Label (optional) — z.B. CRM Bugfix"
-            style="background:var(--bg); border:1px solid var(--border); border-radius:8px;
-                   padding:0.75rem; color:var(--text); font-family:var(--font-ui);
-                   font-size:0.9rem; width:100%; margin-bottom:1rem; outline:none;">
+          <div id="dw-label-display" style="text-align:center; font-size:0.8rem; color:var(--muted); margin-bottom:1rem; min-height:1.2rem;"></div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
             <button id="dw-pause-btn" onclick="dwTogglePause()"
               style="background:var(--surface); border:1px solid var(--border); border-radius:8px;
                      padding:1rem; color:var(--text); font-family:var(--font-ui); font-size:0.9rem;
-                     cursor:pointer; font-weight:500;">
+                     cursor:pointer; font-weight:500; touch-action:manipulation;">
               ⏸ PAUSE
             </button>
             <button onclick="dwEnd()"
               style="background:transparent; border:1px solid var(--red); border-radius:8px;
                      padding:1rem; color:var(--red); font-family:var(--font-ui); font-size:0.9rem;
-                     cursor:pointer; font-weight:500;">
+                     cursor:pointer; font-weight:500; touch-action:manipulation;">
               ⏹ BEENDEN
             </button>
           </div>
@@ -713,15 +711,14 @@ async function recoverActiveSession() {
     .single();
   if (!data) return;
 
-  // Resume the running session — don't close it
-  const elapsed = Math.floor((Date.now() - new Date(data.started_at).getTime()) / 1000);
+  // Resume the running session — wallclock-based, no tick accumulation needed
   dwState = 'active';
   dwStartedAt = new Date(data.started_at);
+  dwFocusStart = new Date(data.started_at); // treat all elapsed time as focused
+  dwFocusedSeconds = 0;
   dwCurrentSessionId = data.id;
-  dwTotalSeconds = elapsed;
-  dwFocusedSeconds = elapsed; // assume all time was focused (paused state not persisted)
-  dwTotalInterval = setInterval(() => { dwTotalSeconds++; renderDWTimers(); }, 1000);
-  dwFocusInterval = setInterval(() => { dwFocusedSeconds++; }, 1000);
+  dwStartLabel = data.label || '';
+  dwInterval = setInterval(renderDWTimers, 1000);
   renderDWState();
   renderDWTimers();
   dwUpdateBanner();
@@ -729,7 +726,7 @@ async function recoverActiveSession() {
 }
 
 // ── TRAINING STATE ──
-const MUSCLE_GROUPS = ['Brust', 'Rücken', 'Schultern', 'Arme', 'Beine', 'Core', 'Cardio', 'Full Body'];
+const MUSCLE_GROUPS = ['Brust', 'Rücken', 'Schultern', 'Arme', 'Beine', 'Core', 'Cardio', 'Full Body', 'Kampfsport'];
 
 let trState = 'idle';
 let trTotalSeconds = 0;
@@ -1083,21 +1080,33 @@ function ampelRow(label, count, total, color) {
 }
 
 // ── DEEP WORK STATE ──
+// Timers use wallclock (Date.now()) not tick-counting — immune to browser throttling
 let dwState = 'idle';
-let dwTotalSeconds = 0;
-let dwFocusedSeconds = 0;
-let dwTotalInterval = null;
-let dwFocusInterval = null;
-let dwStartedAt = null;
+let dwStartedAt = null;       // when total timer started (or was recovered)
+let dwFocusStart = null;      // when current focus segment started
+let dwFocusedSeconds = 0;     // accumulated focus seconds from completed segments
+let dwInterval = null;
 let dwCurrentSessionId = null;
+let dwStartLabel = '';
+
+function dwGetTotalSeconds() {
+  if (!dwStartedAt) return 0;
+  return Math.floor((Date.now() - dwStartedAt.getTime()) / 1000);
+}
+function dwGetFocusedSeconds() {
+  const completed = dwFocusedSeconds;
+  const current = (dwState === 'active' && dwFocusStart)
+    ? Math.floor((Date.now() - dwFocusStart) / 1000) : 0;
+  return completed + current;
+}
 
 function dwStart() {
+  dwStartLabel = document.getElementById('dw-label-start-input').value.trim();
   dwState = 'active';
   dwStartedAt = new Date();
-  dwTotalSeconds = 0;
+  dwFocusStart = new Date();
   dwFocusedSeconds = 0;
-  dwTotalInterval = setInterval(() => { dwTotalSeconds++; renderDWTimers(); }, 1000);
-  dwFocusInterval = setInterval(() => { dwFocusedSeconds++; }, 1000);
+  dwInterval = setInterval(renderDWTimers, 1000);
   dwCreateSession();
   renderDWState();
   dwActivateMediaSession();
@@ -1106,21 +1115,27 @@ function dwStart() {
 
 function dwPause() {
   if (dwState !== 'active') return;
+  // Bank the focused seconds from this segment
+  dwFocusedSeconds += Math.floor((Date.now() - dwFocusStart.getTime()) / 1000);
+  dwFocusStart = null;
   dwState = 'paused';
-  clearInterval(dwFocusInterval);
   renderDWState();
 }
 
 function dwResume() {
   if (dwState !== 'paused') return;
+  dwFocusStart = new Date();
   dwState = 'active';
-  dwFocusInterval = setInterval(() => { dwFocusedSeconds++; }, 1000);
   renderDWState();
 }
 
 function dwEnd() {
-  clearInterval(dwTotalInterval);
-  clearInterval(dwFocusInterval);
+  clearInterval(dwInterval);
+  dwInterval = null;
+  if (dwState === 'active' && dwFocusStart) {
+    dwFocusedSeconds += Math.floor((Date.now() - dwFocusStart.getTime()) / 1000);
+    dwFocusStart = null;
+  }
   dwState = 'idle';
   dwUpdateBanner();
   dwClearMediaSession();
@@ -1128,9 +1143,11 @@ function dwEnd() {
 }
 
 function renderDWTimers() {
-  document.getElementById('dw-total').textContent = formatTime(dwTotalSeconds);
-  document.getElementById('dw-focus').textContent = formatTime(dwFocusedSeconds);
-  document.getElementById('dw-pause').textContent = formatTime(dwTotalSeconds - dwFocusedSeconds);
+  const total = dwGetTotalSeconds();
+  const focus = dwGetFocusedSeconds();
+  document.getElementById('dw-total').textContent = formatTime(total);
+  document.getElementById('dw-focus').textContent = formatTime(focus);
+  document.getElementById('dw-pause').textContent = formatTime(total - focus);
   dwUpdateBanner();
 }
 
@@ -1140,7 +1157,7 @@ function dwUpdateBanner() {
     banner.classList.remove('visible');
   } else {
     banner.classList.add('visible');
-    document.getElementById('session-banner-time').textContent = formatTime(dwTotalSeconds);
+    document.getElementById('session-banner-time').textContent = formatTime(dwGetTotalSeconds());
   }
 }
 
@@ -1189,12 +1206,14 @@ function renderDWState() {
   const running = document.getElementById('dw-running');
   const pauseBtn = document.getElementById('dw-pause-btn');
   const statusEl = document.getElementById('dw-status-indicator');
+  const labelEl = document.getElementById('dw-label-display');
   if (dwState === 'idle') {
     idle.classList.remove('hidden');
     running.classList.add('hidden');
   } else {
     idle.classList.add('hidden');
     running.classList.remove('hidden');
+    if (labelEl) labelEl.textContent = dwStartLabel || '';
   }
   if (dwState === 'paused') {
     pauseBtn.textContent = '▶ WEITER';
@@ -1213,25 +1232,27 @@ function dwTogglePause() {
 }
 
 function showDWSummaryModal() {
-  const pct = dwTotalSeconds > 0 ? Math.round((dwFocusedSeconds / dwTotalSeconds) * 100) : 0;
+  const total = dwGetTotalSeconds();
+  const focus = dwGetFocusedSeconds();
+  const pct = total > 0 ? Math.round((focus / total) * 100) : 0;
   document.getElementById('dw-summary-content').innerHTML = `
     <div style="display:flex; flex-direction:column; gap:0.75rem;">
       <div style="display:flex; justify-content:space-between;">
         <span style="color:var(--muted)">Gesamt</span>
-        <span style="font-family:var(--font-mono)">${formatTime(dwTotalSeconds)}</span>
+        <span style="font-family:var(--font-mono)">${formatTime(total)}</span>
       </div>
       <div style="display:flex; justify-content:space-between;">
         <span style="color:var(--accent)">Fokus</span>
-        <span style="font-family:var(--font-mono); color:var(--accent)">${formatTime(dwFocusedSeconds)} (${pct}%)</span>
+        <span style="font-family:var(--font-mono); color:var(--accent)">${formatTime(focus)} (${pct}%)</span>
       </div>
       <div style="display:flex; justify-content:space-between;">
         <span style="color:var(--muted)">Pause</span>
-        <span style="font-family:var(--font-mono); color:var(--muted)">${formatTime(dwTotalSeconds - dwFocusedSeconds)} (${100 - pct}%)</span>
+        <span style="font-family:var(--font-mono); color:var(--muted)">${formatTime(total - focus)} (${100 - pct}%)</span>
       </div>
-      ${document.getElementById('dw-label-input').value ? `
+      ${dwStartLabel ? `
       <div style="display:flex; justify-content:space-between;">
         <span style="color:var(--muted)">Label</span>
-        <span>${document.getElementById('dw-label-input').value}</span>
+        <span>${dwStartLabel}</span>
       </div>` : ''}
     </div>
   `;
@@ -1240,17 +1261,20 @@ function showDWSummaryModal() {
 
 async function dwSave() {
   document.getElementById('dw-summary-modal').classList.add('hidden');
-  const label = document.getElementById('dw-label-input').value;
-  await dwSaveSession(label);
-  document.getElementById('dw-label-input').value = '';
+  await dwSaveSession(dwStartLabel);
+  dwStartLabel = '';
+  document.getElementById('dw-label-start-input').value = '';
   renderDWState();
 }
 
 async function dwDiscard() {
   document.getElementById('dw-summary-modal').classList.add('hidden');
   await dwDiscardSession();
-  dwTotalSeconds = 0;
   dwFocusedSeconds = 0;
+  dwStartedAt = null;
+  dwFocusStart = null;
+  dwStartLabel = '';
+  document.getElementById('dw-label-start-input').value = '';
   renderDWTimers();
   renderDWState();
 }
@@ -1260,6 +1284,7 @@ async function dwCreateSession() {
   const { data } = await SB.from('tracker_sessions').insert({
     type: 'deep_work',
     started_at: dwStartedAt.toISOString(),
+    label: dwStartLabel || null,
     is_active: true,
     is_paused: false,
     created_by: user.id
@@ -1271,8 +1296,8 @@ async function dwSaveSession(label) {
   if (!dwCurrentSessionId) return;
   await SB.from('tracker_sessions').update({
     ended_at: new Date().toISOString(),
-    total_seconds: dwTotalSeconds,
-    focused_seconds: dwFocusedSeconds,
+    total_seconds: dwGetTotalSeconds(),
+    focused_seconds: dwGetFocusedSeconds(),
     label: label || null,
     is_active: false,
     is_paused: false
@@ -1329,6 +1354,7 @@ async function loadOverview() {
   const weekStart = getWeekStart();
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
 
+  const streak60Start = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const [
     { data: dwToday },
     { data: trainToday },
@@ -1337,7 +1363,8 @@ async function loadOverview() {
     { data: dwWeek },
     { data: allSessionsToday },
     { data: allSessionsWeek },
-    { data: allSessionsMonth }
+    { data: allSessionsMonth },
+    { data: streakSessions }
   ] = await Promise.all([
     SB.from('tracker_sessions').select('focused_seconds').eq('type','deep_work').eq('is_active',false).gte('started_at', today + 'T00:00:00+00:00'),
     SB.from('tracker_sessions').select('focused_seconds').eq('type','training').eq('is_active',false).gte('started_at', today + 'T00:00:00+00:00'),
@@ -1346,13 +1373,34 @@ async function loadOverview() {
     SB.from('tracker_sessions').select('started_at, focused_seconds, type').eq('is_active',false).gte('started_at', weekStart + 'T00:00:00+00:00').order('started_at'),
     SB.from('tracker_sessions').select('total_seconds, focused_seconds').eq('is_active',false).gte('started_at', today + 'T00:00:00+00:00'),
     SB.from('tracker_sessions').select('total_seconds, focused_seconds').eq('is_active',false).gte('started_at', weekStart + 'T00:00:00+00:00'),
-    SB.from('tracker_sessions').select('total_seconds, focused_seconds').eq('is_active',false).gte('started_at', monthStart + 'T00:00:00+00:00')
+    SB.from('tracker_sessions').select('total_seconds, focused_seconds').eq('is_active',false).gte('started_at', monthStart + 'T00:00:00+00:00'),
+    SB.from('tracker_sessions').select('started_at, focused_seconds').eq('type','deep_work').eq('is_active',false).gte('started_at', streak60Start + 'T00:00:00+00:00')
   ]);
 
   const dwTodayTotal = (dwToday || []).reduce((s, r) => s + (r.focused_seconds || 0), 0);
   const trainTodayTotal = (trainToday || []).reduce((s, r) => s + (r.focused_seconds || 0), 0);
   const callsTodayPlayed = (callsToday || []).reduce((s, r) => s + (r.leads_played || 0), 0);
   const contentCount = (contentWeek || []).length;
+
+  // DW Streak — days with ≥ 1h focus, counting backwards from today
+  const dwByDate = {};
+  (streakSessions || []).forEach(r => {
+    const d = r.started_at.split('T')[0];
+    dwByDate[d] = (dwByDate[d] || 0) + (r.focused_seconds || 0);
+  });
+  let dwStreak = 0;
+  for (let i = 0; i <= 60; i++) {
+    const d = new Date(Date.now() - i * 86400000).toISOString().split('T')[0];
+    if ((dwByDate[d] || 0) >= 3600) dwStreak++;
+    else if (i > 0) break; // gap — stop (don't break on today if today not yet done)
+  }
+
+  // DW Wochenziel
+  const dwWeekGoalHours = parseFloat(localStorage.getItem('dw_weekly_goal_hours') || '20');
+  const dwWeekFocusSec = (allSessionsWeek || []).filter ? 0 : 0; // computed below from dwWeek
+  const dwWeekTotal = (dwWeek || []).filter(r => r.type === 'deep_work').reduce((s, r) => s + (r.focused_seconds || 0), 0);
+  const dwWeekGoalSec = dwWeekGoalHours * 3600;
+  const dwWeekPct = Math.min(100, Math.round((dwWeekTotal / dwWeekGoalSec) * 100));
 
   function calcEffizienz(sessions) {
     const total   = (sessions || []).reduce((s, r) => s + (r.total_seconds   || 0), 0);
@@ -1421,6 +1469,24 @@ async function loadOverview() {
   document.getElementById('tab-overview').innerHTML = `
     <div style="margin-bottom:0.5rem; color:var(--muted); font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase;">
       ${dateStr}
+    </div>
+    <div class="card" style="margin-bottom:0.75rem; display:flex; align-items:center; justify-content:space-between; gap:1rem;">
+      <div>
+        <div style="font-size:0.6rem; letter-spacing:0.12em; color:var(--muted); text-transform:uppercase; margin-bottom:0.25rem;">DW STREAK</div>
+        <div style="font-family:var(--font-mono); font-size:1.6rem; color:var(--accent); line-height:1;">${dwStreak > 0 ? '🔥 ' + dwStreak : '—'}</div>
+        <div style="font-size:0.65rem; color:var(--muted); margin-top:0.2rem;">${dwStreak === 1 ? 'Tag' : 'Tage'} ≥ 1h Fokus</div>
+      </div>
+      <div style="flex:1; max-width:180px;">
+        <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--muted); margin-bottom:0.35rem;">
+          <span>Wochenziel</span>
+          <span style="display:flex; align-items:center; gap:0.3rem;">
+            ${formatTime(dwWeekTotal)} / <span id="dw-goal-display" style="cursor:pointer;" onclick="editDWGoal()">${dwWeekGoalHours}h ✏️</span>
+          </span>
+        </div>
+        <div style="background:var(--border); border-radius:4px; height:6px; overflow:hidden;">
+          <div style="background:var(--accent); height:100%; width:${dwWeekPct}%; border-radius:4px; transition:width 0.3s;"></div>
+        </div>
+      </div>
     </div>
     <div class="card" style="margin-bottom:0.75rem;">
       <div class="section-title">EFFIZIENZ</div>
@@ -1569,7 +1635,16 @@ function todoCard(t) {
           <span style="font-size:0.65rem;padding:0.15rem 0.45rem;border-radius:4px;background:${rel.color}22;color:${rel.color};">${rel.label}</span>
           ${t.estimated_min?`<span style="font-size:0.65rem;color:var(--muted);font-family:var(--font-mono);">~${t.estimated_min}min</span>`:''}
           ${t.actual_min?`<span style="font-size:0.65rem;color:var(--green);font-family:var(--font-mono);">${t.actual_min}min real</span>`:''}
-          ${t.due_date?`<span style="font-size:0.65rem;color:var(--muted);">📅 ${new Date(t.due_date+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})}${t.due_time?' '+t.due_time.slice(0,5):''}</span>`:''}
+          ${t.due_date ? (() => {
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            const dueDateTime = new Date(t.due_date + 'T' + (t.due_time || '23:59:00'));
+            const isOverdue = !isDone && dueDateTime < now;
+            const isToday = !isDone && t.due_date === today && !isOverdue;
+            const dateColor = isOverdue ? 'var(--red)' : isToday ? 'var(--yellow)' : 'var(--muted)';
+            const prefix = isOverdue ? '⚠️ ' : '📅 ';
+            return `<span style="font-size:0.65rem;color:${dateColor};">${prefix}${new Date(t.due_date+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})}${t.due_time?' '+t.due_time.slice(0,5):''}</span>`;
+          })() : ''}
         </div>
       </div>
       <button onclick="openTodoActions(${t.id})" style="flex-shrink:0;background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;padding:0 0.25rem;touch-action:manipulation;line-height:1;">⋯</button>
@@ -1714,6 +1789,15 @@ async function confirmDone() {
 }
 
 function switchTodoView(view) { todoView=view; loadTodos(); }
+
+function editDWGoal() {
+  const current = localStorage.getItem('dw_weekly_goal_hours') || '20';
+  const val = prompt('Wochenziel Deep Work (Stunden):', current);
+  if (val && !isNaN(parseFloat(val)) && parseFloat(val) > 0) {
+    localStorage.setItem('dw_weekly_goal_hours', parseFloat(val).toString());
+    loadOverview();
+  }
+}
 </script>
 </body>
 </html>
