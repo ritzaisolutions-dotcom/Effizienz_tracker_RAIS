@@ -19,10 +19,10 @@
       --surface:  #141618;
       --border:   #222426;
       --text:     #F0F0F0;
-      --muted:    #888;
-      --accent:   #C8FF00;
-      --green:    #22C55E;
-      --yellow:   #EAB308;
+      --muted:    #7B746B;
+      --accent:   #EC6A37;
+      --green:    #789464;
+      --yellow:   #F37A48;
       --red:      #EF4444;
       --font-ui:  'Outfit', sans-serif;
       --font-mono:'Space Mono', monospace;
@@ -643,7 +643,7 @@ function selectContentType(type) {
   const btn = document.getElementById('ctype-' + type);
   btn.style.borderColor = 'var(--accent)';
   btn.style.color = 'var(--accent)';
-  btn.style.background = 'rgba(200,255,0,0.08)';
+  btn.style.background = 'rgba(236,106,55,0.12)';
   checkContentReady();
 }
 
@@ -657,7 +657,7 @@ function selectContentPlatform(platform) {
   const btn = document.getElementById('cplatform-' + platform);
   btn.style.borderColor = 'var(--accent)';
   btn.style.color = 'var(--accent)';
-  btn.style.background = 'rgba(200,255,0,0.08)';
+  btn.style.background = 'rgba(236,106,55,0.12)';
   checkContentReady();
 }
 
@@ -934,7 +934,7 @@ function selectMuscle(m) {
   const btn = document.getElementById('muscle-' + m);
   btn.style.borderColor = 'var(--green)';
   btn.style.color = 'var(--green)';
-  btn.style.background = 'rgba(34,197,94,0.08)';
+  btn.style.background = 'rgba(120,148,100,0.12)';
   const startBtn = document.getElementById('tr-start-btn');
   startBtn.disabled = false;
   startBtn.style.opacity = '1';
@@ -1012,7 +1012,7 @@ function renderOutreach(sessions, events, period) {
           style="flex:1; padding:0.6rem; border-radius:8px; font-family:var(--font-ui);
                  font-size:0.8rem; cursor:pointer;
                  border:1px solid ${t === period ? 'var(--accent)' : 'var(--border)'};
-                 background:${t === period ? 'rgba(200,255,0,0.08)' : 'transparent'};
+                 background:${t === period ? 'rgba(236,106,55,0.12)' : 'transparent'};
                  color:${t === period ? 'var(--accent)' : 'var(--muted)'};">
           ${tabLabels[t]}
         </button>
