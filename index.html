@@ -707,18 +707,25 @@ async function recoverActiveSession() {
   if (!user) return;
   const { data } = await SB.from('tracker_sessions')
     .select('*')
+    .eq('type', 'deep_work')
     .eq('is_active', true)
     .eq('created_by', user.id)
     .single();
-  if (data) {
-    const elapsed = Math.floor((Date.now() - new Date(data.started_at).getTime()) / 1000);
-    await SB.from('tracker_sessions').update({
-      is_active: false,
-      ended_at: new Date().toISOString(),
-      total_seconds: elapsed,
-      focused_seconds: Math.floor(elapsed * 0.9),
-    }).eq('id', data.id);
-  }
+  if (!data) return;
+
+  // Resume the running session — don't close it
+  const elapsed = Math.floor((Date.now() - new Date(data.started_at).getTime()) / 1000);
+  dwState = 'active';
+  dwStartedAt = new Date(data.started_at);
+  dwCurrentSessionId = data.id;
+  dwTotalSeconds = elapsed;
+  dwFocusedSeconds = elapsed; // assume all time was focused (paused state not persisted)
+  dwTotalInterval = setInterval(() => { dwTotalSeconds++; renderDWTimers(); }, 1000);
+  dwFocusInterval = setInterval(() => { dwFocusedSeconds++; }, 1000);
+  renderDWState();
+  renderDWTimers();
+  dwUpdateBanner();
+  dwActivateMediaSession();
 }
 
 // ── TRAINING STATE ──
