@@ -148,6 +148,22 @@
     }
     .btn-logout:hover { color: var(--text); border-color: var(--text); }
 
+    /* ── SESSION BANNER ── */
+    #session-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--accent);
+      color: #000;
+      padding: 0.55rem 1.25rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+    }
+    #session-banner.visible { display: flex; }
+    #session-banner-time { font-family: var(--font-mono); font-size: 0.85rem; }
+
     /* Tab Content Area */
     .tab-content {
       padding: 1.25rem;
@@ -233,6 +249,12 @@
   <div class="topbar">
     <span class="topbar-logo">RAIS</span>
     <button class="btn-logout" onclick="handleLogout()">Logout</button>
+  </div>
+
+  <!-- Active session banner — tapping navigates to Deep Work tab -->
+  <div id="session-banner" onclick="navToDeepWork()">
+    <span>● DEEP WORK LÄUFT</span>
+    <span id="session-banner-time">00:00:00</span>
   </div>
 
   <div class="tab-content">
@@ -1071,6 +1093,8 @@ function dwStart() {
   dwFocusInterval = setInterval(() => { dwFocusedSeconds++; }, 1000);
   dwCreateSession();
   renderDWState();
+  dwActivateMediaSession();
+  dwUpdateBanner();
 }
 
 function dwPause() {
@@ -1091,6 +1115,8 @@ function dwEnd() {
   clearInterval(dwTotalInterval);
   clearInterval(dwFocusInterval);
   dwState = 'idle';
+  dwUpdateBanner();
+  dwClearMediaSession();
   showDWSummaryModal();
 }
 
@@ -1098,6 +1124,57 @@ function renderDWTimers() {
   document.getElementById('dw-total').textContent = formatTime(dwTotalSeconds);
   document.getElementById('dw-focus').textContent = formatTime(dwFocusedSeconds);
   document.getElementById('dw-pause').textContent = formatTime(dwTotalSeconds - dwFocusedSeconds);
+  dwUpdateBanner();
+}
+
+function dwUpdateBanner() {
+  const banner = document.getElementById('session-banner');
+  if (dwState === 'idle') {
+    banner.classList.remove('visible');
+  } else {
+    banner.classList.add('visible');
+    document.getElementById('session-banner-time').textContent = formatTime(dwTotalSeconds);
+  }
+}
+
+function navToDeepWork() {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-tab="deepwork"]').classList.add('active');
+  document.getElementById('tab-deepwork').classList.add('active');
+}
+
+let _dwSilentAudio = null;
+
+function dwActivateMediaSession() {
+  if (!('mediaSession' in navigator)) return;
+  // Android requires actual audio playback to show media notification
+  if (!_dwSilentAudio) {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 3600, ctx.sampleRate);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.connect(ctx.destination);
+    src.start();
+    _dwSilentAudio = { ctx, src };
+  }
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: 'Deep Work läuft',
+    artist: 'RAIS Tracker',
+    album: '● Fokus-Session aktiv',
+  });
+  navigator.mediaSession.playbackState = 'playing';
+}
+
+function dwClearMediaSession() {
+  if (_dwSilentAudio) {
+    try { _dwSilentAudio.src.stop(); _dwSilentAudio.ctx.close(); } catch(_) {}
+    _dwSilentAudio = null;
+  }
+  if (!('mediaSession' in navigator)) return;
+  navigator.mediaSession.playbackState = 'none';
+  navigator.mediaSession.metadata = null;
 }
 
 function renderDWState() {
@@ -1377,6 +1454,7 @@ async function loadOverview() {
 const TODO_CATEGORIES = {
   rais:     { label: 'RAIS',    color: '#EC6A37' },
   eckstein: { label: 'Eckstein',color: '#818CF8' },
+  bildung:  { label: 'Bildung', color: '#22D3EE' },
   sport:    { label: 'Sport',   color: '#789464' },
   glaube:   { label: 'Glaube',  color: '#F59E0B' },
   privat:   { label: 'Privat',  color: '#60A5FA' },
