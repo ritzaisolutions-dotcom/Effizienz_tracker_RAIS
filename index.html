@@ -496,6 +496,9 @@
 
     <!-- SETTINGS TAB -->
     <div class="tab-panel" id="tab-settings"></div>
+
+    <!-- CHAT TAB -->
+    <div class="tab-panel" id="tab-chat"></div>
   </div>
 
   <nav class="bottom-nav">
@@ -543,6 +546,12 @@
         <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
       </svg>
       Settings
+    </button>
+    <button class="nav-item" data-tab="chat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+      </svg>
+      Bot
     </button>
   </nav>
 </div>
@@ -652,6 +661,7 @@ const TAB_ON_ACTIVATE = {
   content:  () => loadContentLog(),
   todos:    () => loadTodos(),
   settings: () => loadSettings(),
+  chat:     () => loadChat(),
 };
 
 function initTabs() {
@@ -2251,6 +2261,154 @@ async function saveBotSettings() {
     character_prompt: ta.value.trim() || null,
   });
   if (!error) showToast('Prompt gespeichert');
+}
+
+// ── CHAT BOT ──
+let _chatFile = null;
+
+function loadChat() {
+  document.getElementById('tab-chat').innerHTML = `
+    <div style="display:flex; flex-direction:column; height:calc(100vh - 120px);">
+      <div class="card" style="margin-bottom:0; border-radius:12px 12px 0 0; padding:0.75rem 1rem; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+        <span style="font-size:0.7rem; color:var(--muted); font-family:var(--font-mono);">COMMANDER RITZ</span>
+        <select id="chat-model-select"
+          style="background:var(--bg); border:1px solid var(--border); border-radius:6px;
+                 padding:0.3rem 0.5rem; color:var(--text); font-family:var(--font-mono);
+                 font-size:0.7rem; outline:none; cursor:pointer;"
+          onchange="saveChatModel(this.value)">
+          <option value="claude-sonnet-4-6">Sonnet 4.6</option>
+          <option value="claude-opus-4-7">Opus 4.7</option>
+          <option value="claude-haiku-4-5-20251001">Haiku 4.5</option>
+        </select>
+      </div>
+      <div id="chat-messages"
+        style="flex:1; overflow-y:auto; padding:1rem; background:var(--bg);
+               display:flex; flex-direction:column; gap:0.75rem;"></div>
+      <div id="chat-file-preview" style="display:none; padding:0.5rem 1rem; background:var(--surface);
+           border-top:1px solid var(--border); font-size:0.75rem; color:var(--muted);
+           align-items:center; gap:0.5rem;">
+        <span id="chat-file-name"></span>
+        <button onclick="clearChatFile()" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:0.8rem;">✕</button>
+      </div>
+      <div style="display:flex; align-items:flex-end; gap:0.5rem; padding:0.75rem;
+                  background:var(--surface); border-top:1px solid var(--border); flex-shrink:0;">
+        <button onclick="document.getElementById('chat-file-input').click()"
+          style="background:var(--border); border:none; border-radius:50%; width:36px; height:36px;
+                 display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text); flex-shrink:0; font-size:1.1rem;">+</button>
+        <input type="file" id="chat-file-input" style="display:none"
+          accept="image/*,.pdf" onchange="handleChatFile(this)">
+        <textarea id="chat-input"
+          rows="1"
+          placeholder="Schreib Commander Ritz…"
+          style="flex:1; background:var(--bg); border:1px solid var(--border); border-radius:10px;
+                 padding:0.6rem 0.75rem; color:var(--text); font-family:var(--font-ui); font-size:0.9rem;
+                 resize:none; outline:none; max-height:120px; line-height:1.4;"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage();}"
+          oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+        <button onclick="sendChatMessage()"
+          style="background:var(--accent); border:none; border-radius:50%; width:36px; height:36px;
+                 display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;">
+          <svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+        </button>
+      </div>
+    </div>
+  `;
+  loadChatModel();
+}
+
+async function loadChatModel() {
+  const { data: { user } } = await SB.auth.getUser();
+  if (!user) return;
+  const { data } = await SB.from('bot_settings').select('selected_model').eq('user_id', user.id).maybeSingle();
+  const model = data?.selected_model || 'claude-sonnet-4-6';
+  const sel = document.getElementById('chat-model-select');
+  if (sel) sel.value = model;
+}
+
+async function saveChatModel(model) {
+  const { data: { user } } = await SB.auth.getUser();
+  if (!user) return;
+  await SB.from('bot_settings').upsert({ user_id: user.id, selected_model: model });
+  showToast('Modell gespeichert');
+}
+
+function handleChatFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const base64 = e.target.result.split(',')[1];
+    _chatFile = { name: file.name, type: file.type, data: base64 };
+    const preview = document.getElementById('chat-file-preview');
+    const nameEl = document.getElementById('chat-file-name');
+    if (preview) preview.style.display = 'flex';
+    if (nameEl) nameEl.textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearChatFile() {
+  _chatFile = null;
+  const preview = document.getElementById('chat-file-preview');
+  if (preview) preview.style.display = 'none';
+  const fi = document.getElementById('chat-file-input');
+  if (fi) fi.value = '';
+}
+
+function appendChatMessage(role, text) {
+  const feed = document.getElementById('chat-messages');
+  if (!feed) return;
+  const isUser = role === 'user';
+  const div = document.createElement('div');
+  div.style.cssText = `display:flex; justify-content:${isUser ? 'flex-end' : 'flex-start'};`;
+  div.innerHTML = `<div style="max-width:80%; padding:0.65rem 0.9rem;
+    background:${isUser ? 'var(--accent)' : 'var(--surface)'};
+    color:${isUser ? '#fff' : 'var(--text)'};
+    border-radius:${isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};
+    font-size:0.875rem; line-height:1.5; white-space:pre-wrap; word-break:break-word;">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;
+  feed.appendChild(div);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input?.value.trim();
+  if (!text && !_chatFile) return;
+
+  const model = document.getElementById('chat-model-select')?.value || 'claude-sonnet-4-6';
+  const file = _chatFile;
+
+  appendChatMessage('user', text || `[${file?.name}]`);
+  if (input) { input.value = ''; input.style.height = 'auto'; }
+  clearChatFile();
+
+  const feed = document.getElementById('chat-messages');
+  const typing = document.createElement('div');
+  typing.id = 'chat-typing';
+  typing.style.cssText = 'display:flex; justify-content:flex-start;';
+  typing.innerHTML = `<div style="background:var(--surface); border-radius:16px 16px 16px 4px; padding:0.65rem 0.9rem; color:var(--muted); font-size:0.875rem;">…</div>`;
+  if (feed) { feed.appendChild(typing); feed.scrollTop = feed.scrollHeight; }
+
+  try {
+    const { data: { session } } = await SB.auth.getSession();
+    const body = { message: text, model };
+    if (file) body.file = file;
+
+    const res = await fetch('https://qdywaenmojdxhfxqbvun.supabase.co/functions/v1/chat-bot', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    document.getElementById('chat-typing')?.remove();
+    appendChatMessage('bot', json.reply || 'Fehler.');
+  } catch (e) {
+    document.getElementById('chat-typing')?.remove();
+    appendChatMessage('bot', 'Verbindungsfehler.');
+  }
 }
 
 // ── OUTREACH TAGESZIEL ──

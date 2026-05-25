@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <!-- Hintergrund -->
-  <rect width="512" height="512" rx="72" fill="#0A0A0A"/>
+  <rect width="512" height="512" rx="72" fill="#FFFFFF"/>
 
   <!-- RAIS Piktogramm: aus original Pfad, skaliert auf ca. 220x220, zentriert oben mit Padding -->
   <!-- Original: viewBox 249 249 526 526, transform translate(0,1024) scale(0.1,-0.1) -->
@@ -121,9 +121,8 @@ m146 -740 l25 -24 0 -26 c0 -39 -16 -62 -50 -74 l-31 -10 -22 8 c-33 13 -50
     text-anchor="middle"
     font-family="'Arial Black', 'Impact', 'Franklin Gothic Heavy', sans-serif"
     font-size="46"
-    font-style="italic"
     font-weight="900"
-    fill="#EC6A37"
+    fill="#111111"
     letter-spacing="2"
   >PERFORMANCE</text>
 </svg>
