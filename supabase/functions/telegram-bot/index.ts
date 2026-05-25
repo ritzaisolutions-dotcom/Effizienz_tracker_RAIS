@@ -15,6 +15,35 @@ async function sendTelegram(chatId: number, text: string) {
   })
 }
 
+async function sendTelegramWithButtons(
+  chatId: number,
+  text: string,
+  keyboard: { text: string; callback_data: string }[][]
+) {
+  await fetch(`${TELEGRAM_API}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      reply_markup: { inline_keyboard: keyboard },
+    }),
+  })
+}
+
+// ── BOT SETTINGS ──
+async function loadBotSettings(SB: ReturnType<typeof createClient>, userId: string) {
+  const { data } = await SB
+    .from('bot_settings')
+    .select('character_prompt, selected_model')
+    .eq('user_id', userId)
+    .maybeSingle()
+  return {
+    characterPrompt: data?.character_prompt || FUTURE_SELF_PROMPT,
+    selectedModel: data?.selected_model || 'claude-sonnet-4-6',
+  }
+}
+
 // ── SUPABASE CONTEXT ──
 async function loadContext(SB: ReturnType<typeof createClient>, userId: string) {
   const now = new Date()
@@ -25,7 +54,6 @@ async function loadContext(SB: ReturnType<typeof createClient>, userId: string) 
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
 
   const [dwWeek, trWeek, todosOpen, crmToday, crmWeek, contentWeek] = await Promise.all([
-    // DW Stunden diese Woche
     SB.from('tracker_sessions')
       .select('total_seconds, focused_seconds, started_at')
       .eq('type', 'deep_work')
@@ -33,7 +61,6 @@ async function loadContext(SB: ReturnType<typeof createClient>, userId: string) 
       .eq('created_by', userId)
       .gte('started_at', weekStart),
 
-    // Training diese Woche
     SB.from('tracker_sessions')
       .select('label, started_at')
       .eq('type', 'training')
@@ -41,7 +68,6 @@ async function loadContext(SB: ReturnType<typeof createClient>, userId: string) 
       .eq('created_by', userId)
       .gte('started_at', weekStart),
 
-    // Offene Todos
     SB.from('tracker_todos')
       .select('title, relevance, due_date, recurring')
       .eq('done', false)
@@ -49,19 +75,16 @@ async function loadContext(SB: ReturnType<typeof createClient>, userId: string) 
       .order('relevance', { ascending: false })
       .limit(10),
 
-    // CRM heute
     SB.from('crm_sessions')
       .select('leads_played')
       .eq('created_by', userId)
       .gte('started_at', todayStart),
 
-    // CRM diese Woche
     SB.from('crm_sessions')
       .select('leads_played')
       .eq('created_by', userId)
       .gte('started_at', weekStart),
 
-    // Content diese Woche
     SB.from('tracker_content_log')
       .select('format, title')
       .eq('created_by', userId)
@@ -123,10 +146,15 @@ interface BotReply {
   action: { type: string; payload?: Record<string, unknown> } | null
 }
 
-async function askClaude(userText: string, context: string): Promise<BotReply> {
+async function askClaude(
+  userText: string,
+  context: string,
+  characterPrompt: string,
+  model: string
+): Promise<BotReply> {
   const client = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY')! })
 
-  const systemPrompt = `${FUTURE_SELF_PROMPT}
+  const systemPrompt = `${characterPrompt}
 
 ${context}
 
@@ -166,7 +194,7 @@ Heute ist: ${new Date().toLocaleDateString('de-DE', { weekday: 'long', day: '2-d
 `
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+    model,
     max_tokens: 512,
     system: systemPrompt,
     messages: [{ role: 'user', content: userText }],
@@ -175,7 +203,6 @@ Heute ist: ${new Date().toLocaleDateString('de-DE', { weekday: 'long', day: '2-d
   const raw = response.content[0].type === 'text' ? response.content[0].text : ''
 
   try {
-    // JSON aus der Antwort extrahieren (auch wenn Claude Prose davor schreibt)
     const match = raw.match(/\{[\s\S]*\}/)
     if (match) return JSON.parse(match[0]) as BotReply
   } catch (_) { /* fallthrough */ }
@@ -216,7 +243,14 @@ async function executeAction(
   }
 }
 
-// ── DEDUP CACHE (in-memory, reicht für Edge Function Instanz) ──
+// ── MODEL NAMES ──
+const MODEL_NAMES: Record<string, string> = {
+  'claude-sonnet-4-6': 'Sonnet 4.6',
+  'claude-opus-4-7': 'Opus 4.7',
+  'claude-haiku-4-5-20251001': 'Haiku 4.5',
+}
+
+// ── DEDUP CACHE ──
 const _processed = new Set<number>()
 
 // ── MAIN HANDLER ──
@@ -224,6 +258,36 @@ serve(async (req) => {
   let body: any
   try { body = await req.json() } catch { return new Response('ok') }
 
+  // ── CALLBACK QUERY (Inline Button Press) ──
+  const cbq = body?.callback_query
+  if (cbq) {
+    const cbUserId: number = cbq.from.id
+    const cbChatId: number = cbq.message.chat.id
+    const data: string = cbq.data || ''
+
+    await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ callback_query_id: cbq.id }),
+    })
+
+    if (cbUserId === ALLOWED_USER_ID && data.startsWith('model:')) {
+      const newModel = data.slice(6)
+      const SB = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SERVICE_ROLE_KEY')!
+      )
+      await SB.from('bot_settings').upsert({
+        user_id: cbUserId.toString(),
+        selected_model: newModel,
+      })
+      await sendTelegram(cbChatId, `Modell gesetzt: ${MODEL_NAMES[newModel] || newModel}`)
+    }
+
+    return new Response('ok')
+  }
+
+  // ── REGULAR MESSAGE ──
   const msg = body?.message
   if (!msg?.text) return new Response('ok')
 
@@ -232,19 +296,15 @@ serve(async (req) => {
   const userId: number = msg.from.id
   const text: string = msg.text.trim()
 
-  // Sofort 200 zurück — verhindert Telegram-Retries
   const response = new Response('ok')
 
-  // Doppelverarbeitung derselben message_id verhindern
   if (_processed.has(messageId)) return response
   _processed.add(messageId)
   if (_processed.size > 500) {
-    // Set nicht unbegrenzt wachsen lassen
     const first = _processed.values().next().value
     _processed.delete(first)
   }
 
-  // Verarbeitung im Hintergrund (nach Response)
   ;(async () => {
     try {
       if (userId !== ALLOWED_USER_ID) {
@@ -257,8 +317,22 @@ serve(async (req) => {
         Deno.env.get('SERVICE_ROLE_KEY')!
       )
 
-      const context = await loadContext(SB, userId.toString())
-      const reply = await askClaude(text, context)
+      // /modell Command
+      if (text === '/modell') {
+        await sendTelegramWithButtons(chatId, 'Wähle das KI-Modell:', [[
+          { text: 'Sonnet 4.6', callback_data: 'model:claude-sonnet-4-6' },
+          { text: 'Opus 4.7', callback_data: 'model:claude-opus-4-7' },
+          { text: 'Haiku 4.5', callback_data: 'model:claude-haiku-4-5-20251001' },
+        ]])
+        return
+      }
+
+      const [context, botSettings] = await Promise.all([
+        loadContext(SB, userId.toString()),
+        loadBotSettings(SB, userId.toString()),
+      ])
+
+      const reply = await askClaude(text, context, botSettings.characterPrompt, botSettings.selectedModel)
       await executeAction(reply.action, SB, userId.toString())
       await sendTelegram(chatId, reply.message)
     } catch (err) {

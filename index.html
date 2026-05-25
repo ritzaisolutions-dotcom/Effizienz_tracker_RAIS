@@ -1602,14 +1602,20 @@ async function loadOverview() {
   // Letzte DW Notiz
   const lastNote = lastNoteSession && lastNoteSession[0];
 
-  // Snapshot für Wochenbericht (Calls: Supabase-Query für die Woche)
+  // Snapshot für Wochenbericht
   const { data: callsWeekData } = await SB.from('crm_sessions').select('leads_played').gte('started_at', weekStartISO);
   const callsWeekTotal = (callsWeekData || []).reduce((s, r) => s + (r.leads_played || 0), 0);
+  const weekEndStr = (() => { const d = new Date(); d.setDate(d.getDate() - d.getDay() + 7); return getLocalDateString(d); })();
+  const weekStartStr = getLocalDateString(new Date(weekStartISO));
+  const { data: weekTodosData } = await SB.from('tracker_todos')
+    .select('title, due_date').eq('done', false)
+    .gte('due_date', weekStartStr).lte('due_date', weekEndStr).order('due_date');
   _overviewSnap = {
     dwWeekSec: dwWeekTotal,
     trWeekCount,
     callsWeek: callsWeekTotal,
-    contentWeek: contentCount
+    contentWeek: contentCount,
+    weekTodos: weekTodosData || []
   };
 
   function calcEffizienz(sessions) {
@@ -2158,6 +2164,28 @@ function loadSettings() {
         </a>
       `).join('')}
     </div>
+    <div class="card" style="margin-bottom:0.75rem;">
+      <div class="section-title">BOT</div>
+      <div style="padding:0.9rem 0; border-bottom:1px solid var(--border);">
+        <div style="font-size:0.7rem; color:var(--muted); margin-bottom:0.5rem;">CHARACTER-PROMPT</div>
+        <textarea id="bot-character-prompt"
+          style="width:100%; min-height:180px; background:var(--bg); border:1px solid var(--border);
+                 border-radius:6px; padding:0.6rem; color:var(--text); font-family:var(--font-mono);
+                 font-size:0.75rem; line-height:1.5; resize:vertical; outline:none; box-sizing:border-box;"
+          placeholder="Character-Prompt wird geladen…"></textarea>
+      </div>
+      <div style="padding:0.9rem 0; border-bottom:1px solid var(--border);">
+        <div style="font-size:0.7rem; color:var(--muted); margin-bottom:0.4rem;">AKTIVES MODELL</div>
+        <div id="bot-selected-model" style="font-size:0.85rem; font-family:var(--font-mono); color:var(--muted);">…</div>
+      </div>
+      <div style="padding:0.9rem 0;">
+        <button onclick="saveBotSettings()"
+          style="background:var(--accent); border:none; border-radius:8px; padding:0.6rem 1.4rem;
+                 color:#fff; font-family:var(--font-ui); font-size:0.85rem; cursor:pointer; touch-action:manipulation;">
+          Prompt speichern
+        </button>
+      </div>
+    </div>
     <div class="card">
       <div class="section-title">KONTO</div>
       <div style="padding:0.9rem 0; border-bottom:1px solid var(--border);">
@@ -2178,6 +2206,23 @@ function loadSettings() {
   SB.auth.getUser().then(({ data: { user } }) => {
     const el = document.getElementById('settings-email');
     if (el && user) el.textContent = user.email;
+
+    if (!user) return;
+    SB.from('bot_settings')
+      .select('character_prompt, selected_model')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        const ta = document.getElementById('bot-character-prompt');
+        const ml = document.getElementById('bot-selected-model');
+        const names = {
+          'claude-sonnet-4-6': 'Sonnet 4.6',
+          'claude-opus-4-7': 'Opus 4.7',
+          'claude-haiku-4-5-20251001': 'Haiku 4.5',
+        };
+        if (ta) ta.value = data?.character_prompt || '';
+        if (ml) ml.textContent = names[data?.selected_model] || data?.selected_model || 'Sonnet 4.6 (Standard)';
+      });
   });
 }
 
@@ -2193,6 +2238,19 @@ function saveSetting(key, value) {
     const n = parseFloat(value);
     if (!isNaN(n) && n > 0) localStorage.setItem(key, n.toString());
   }
+}
+
+// ── BOT SETTINGS ──
+async function saveBotSettings() {
+  const ta = document.getElementById('bot-character-prompt');
+  if (!ta) return;
+  const { data: { user } } = await SB.auth.getUser();
+  if (!user) return;
+  const { error } = await SB.from('bot_settings').upsert({
+    user_id: user.id,
+    character_prompt: ta.value.trim() || null,
+  });
+  if (!error) showToast('Prompt gespeichert');
 }
 
 // ── OUTREACH TAGESZIEL ──
@@ -2296,7 +2354,10 @@ function getISOWeekNumber(d) {
 function copyWeekReport() {
   const kw = getISOWeekNumber(new Date());
   const s = _overviewSnap;
-  const text = `KW ${kw} | DW: ${Math.round((s.dwWeekSec||0)/3600)}h | Training: ${s.trWeekCount||0}x | Outreach: ${s.callsWeek||0} | Content: ${s.contentWeek||0}`;
+  const todoLine = (s.weekTodos || []).length > 0
+    ? `\nTodos: ${s.weekTodos.map(t => t.title).join(', ')}`
+    : '';
+  const text = `KW ${kw} | DW: ${Math.round((s.dwWeekSec||0)/3600)}h | Training: ${s.trWeekCount||0}x | Outreach: ${s.callsWeek||0} | Content: ${s.contentWeek||0}${todoLine}`;
   navigator.clipboard.writeText(text).then(() => {
     const btn = document.getElementById('week-report-btn');
     if (btn) { btn.textContent = '✓ Kopiert!'; setTimeout(() => { btn.textContent = '📋 Woche kopieren'; }, 2000); }
