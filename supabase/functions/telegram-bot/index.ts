@@ -216,35 +216,55 @@ async function executeAction(
   }
 }
 
+// ── DEDUP CACHE (in-memory, reicht für Edge Function Instanz) ──
+const _processed = new Set<number>()
+
 // ── MAIN HANDLER ──
 serve(async (req) => {
-  try {
-    const body = await req.json()
-    const msg = body?.message
-    if (!msg?.text) return new Response('ok')
+  let body: any
+  try { body = await req.json() } catch { return new Response('ok') }
 
-    const chatId: number = msg.chat.id
-    const userId: number = msg.from.id
-    const text: string = msg.text.trim()
+  const msg = body?.message
+  if (!msg?.text) return new Response('ok')
 
-    if (userId !== ALLOWED_USER_ID) {
-      await sendTelegram(chatId, 'Nicht autorisiert.')
-      return new Response('ok')
-    }
+  const messageId: number = msg.message_id
+  const chatId: number = msg.chat.id
+  const userId: number = msg.from.id
+  const text: string = msg.text.trim()
 
-    const SB = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
+  // Sofort 200 zurück — verhindert Telegram-Retries
+  const response = new Response('ok')
 
-    const context = await loadContext(SB, userId.toString())
-    const reply = await askClaude(text, context)
-    await executeAction(reply.action, SB, userId.toString())
-    await sendTelegram(chatId, reply.message)
-
-    return new Response('ok')
-  } catch (err) {
-    console.error('Bot error:', err)
-    return new Response('ok') // immer 200 zurück an Telegram
+  // Doppelverarbeitung derselben message_id verhindern
+  if (_processed.has(messageId)) return response
+  _processed.add(messageId)
+  if (_processed.size > 500) {
+    // Set nicht unbegrenzt wachsen lassen
+    const first = _processed.values().next().value
+    _processed.delete(first)
   }
+
+  // Verarbeitung im Hintergrund (nach Response)
+  ;(async () => {
+    try {
+      if (userId !== ALLOWED_USER_ID) {
+        await sendTelegram(chatId, 'Nicht autorisiert.')
+        return
+      }
+
+      const SB = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SERVICE_ROLE_KEY')!
+      )
+
+      const context = await loadContext(SB, userId.toString())
+      const reply = await askClaude(text, context)
+      await executeAction(reply.action, SB, userId.toString())
+      await sendTelegram(chatId, reply.message)
+    } catch (err) {
+      console.error('Bot error:', err)
+    }
+  })()
+
+  return response
 })
