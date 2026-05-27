@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>RAIS Tracker</title>
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" href="/RAIS_Performance_Logo.png">
   <meta name="theme-color" content="#0A0A0A">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="RAIS Performance">
-  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="/RAIS_Performance_Logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -341,7 +341,7 @@
           <textarea id="dw-session-notes" placeholder="Was habe ich erarbeitet?"
             style="width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px;
                    padding:0.75rem; color:var(--text); font-family:var(--font-ui); font-size:0.9rem;
-                   resize:none; min-height:80px; outline:none; margin-bottom:1rem;
+                   resize:vertical; min-height:120px; outline:none; margin-bottom:1rem;
                    transition:border-color 0.2s;"
             onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
@@ -417,7 +417,13 @@
         <div style="background:var(--surface); border-radius:16px 16px 0 0; padding:2rem;
                     width:100%; max-width:480px; border-top:1px solid var(--border);">
           <div style="font-size:0.7rem; letter-spacing:0.2em; color:var(--muted); margin-bottom:1.5rem;">TRAINING ZUSAMMENFASSUNG</div>
-          <div id="tr-summary-content" style="margin-bottom:1.5rem;"></div>
+          <div id="tr-summary-content" style="margin-bottom:1.25rem;"></div>
+          <textarea id="tr-session-notes" placeholder="Trainingsnotizen..."
+            style="width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px;
+                   padding:0.75rem; color:var(--text); font-family:var(--font-ui); font-size:0.9rem;
+                   resize:vertical; min-height:120px; outline:none; margin-bottom:1rem;
+                   transition:border-color 0.2s;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
             <button onclick="trDiscard()"
               style="background:transparent; border:1px solid var(--border); border-radius:8px;
@@ -970,8 +976,11 @@ function showTRSummaryModal() {
 
 async function trSave() {
   playClickSound('stop'); triggerHaptic([20, 50, 20]);
+  const notes = document.getElementById('tr-session-notes')?.value.trim() || null;
   document.getElementById('tr-summary-modal').classList.add('hidden');
-  await trSaveSession();
+  const el = document.getElementById('tr-session-notes');
+  if (el) el.value = '';
+  await trSaveSession(notes);
   trActiveSeconds = 0;
   trStartedAt = null;
   trActiveStart = null;
@@ -1005,7 +1014,7 @@ async function trCreateSession() {
   trCurrentSessionId = data.id;
 }
 
-async function trSaveSession() {
+async function trSaveSession(notes) {
   if (!trCurrentSessionId) return;
   const id = trCurrentSessionId;
   trCurrentSessionId = null;
@@ -1014,7 +1023,8 @@ async function trSaveSession() {
     total_seconds: trGetTotalSeconds(),
     focused_seconds: trGetActiveSeconds(),
     is_active: false,
-    is_paused: false
+    is_paused: false,
+    notes: notes || null
   });
   loadTRToday();
   loadOverview();
@@ -1111,10 +1121,12 @@ async function loadOutreach(period = 'today') {
     fromDate = getLocalMonthStartISO();
   }
 
+  const { data: { user } } = await SB.auth.getUser();
   const { data: sessions } = await SB
     .from('crm_sessions')
     .select('id, started_at, ended_at, leads_played, status_breakdown, duration_seconds')
     .gte('started_at', fromDate)
+    .or(`created_by.eq.${user.id},created_by.is.null`)
     .order('started_at', { ascending: false });
 
   const sessionIds = (sessions || []).map(s => s.id);
@@ -1122,7 +1134,7 @@ async function loadOutreach(period = 'today') {
   if (sessionIds.length > 0) {
     const { data: ev } = await SB
       .from('crm_session_events')
-      .select('session_id, status_to, changed_at')
+      .select('id, session_id, contact_id, contact_name, status_from, status_to, changed_at')
       .in('session_id', sessionIds);
     events = ev || [];
   }
@@ -1134,6 +1146,11 @@ function renderOutreach(sessions, events, period) {
   const totalPlayed = sessions.reduce((s, r) => s + (r.leads_played || 0), 0);
   const breakdown = {};
   events.forEach(e => { breakdown[e.status_to] = (breakdown[e.status_to] || 0) + 1; });
+  const eventsBySession = {};
+  events.forEach(e => {
+    if (!eventsBySession[e.session_id]) eventsBySession[e.session_id] = [];
+    eventsBySession[e.session_id].push(e);
+  });
 
   let wins = 0, warm = 0, neutral = 0, dead = 0;
   Object.entries(breakdown).forEach(([status, count]) => {
@@ -1153,7 +1170,7 @@ function renderOutreach(sessions, events, period) {
   const outreachBarColor = outreachPct >= 100 ? 'var(--green)' : outreachPct >= 50 ? 'var(--yellow)' : 'var(--red)';
 
   document.getElementById('tab-outreach').innerHTML = `
-    <div style="display:flex; gap:0.5rem; margin-bottom:1.25rem;">
+    <div style="display:flex; gap:0.5rem; margin-bottom:1.25rem; align-items:center;">
       ${tabs.map(t => `
         <button onclick="loadOutreach('${t}')"
           style="flex:1; padding:0.6rem; border-radius:8px; font-family:var(--font-ui);
@@ -1164,6 +1181,10 @@ function renderOutreach(sessions, events, period) {
           ${tabLabels[t]}
         </button>
       `).join('')}
+      <button onclick="loadOutreach('${period}')"
+        style="flex-shrink:0; padding:0.6rem 0.75rem; border-radius:8px; font-family:var(--font-ui);
+               font-size:0.85rem; cursor:pointer; border:1px solid var(--border);
+               background:transparent; color:var(--muted);" title="Aktualisieren">↻</button>
     </div>
     ${period === 'today' ? `
     <div class="card" style="margin-bottom:0.75rem; padding:0.85rem 1rem;">
@@ -1204,13 +1225,15 @@ function renderOutreach(sessions, events, period) {
       ? '<div style="color:var(--muted); font-size:0.85rem;">Keine Sessions in diesem Zeitraum.</div>'
       : sessions.map(s => {
           const sb = s.status_breakdown || {};
+          const sEvents = eventsBySession[s.id] || [];
+          const demoEvents = sEvents.filter(e => e.status_to === 'demo' || e.status_to === 'closing');
           return `
             <div class="card" style="padding:0.85rem 1rem;">
               <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
-                <div style="font-size:0.85rem;">${new Date(s.started_at).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'})}</div>
+                <div style="font-size:0.85rem;">${new Date(s.started_at).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</div>
                 <div style="font-size:0.85rem; font-family:var(--font-mono);">${s.leads_played} Leads</div>
               </div>
-              <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:${demoEvents.length>0?'0.75rem':'0'};">
                 ${Object.entries(sb).map(([status, count]) => `
                   <span style="font-size:0.7rem; padding:0.2rem 0.5rem; border-radius:4px;
                                background:rgba(255,255,255,0.05); color:${getStatusColor(status)};">
@@ -1218,6 +1241,22 @@ function renderOutreach(sessions, events, period) {
                   </span>
                 `).join('')}
               </div>
+              ${demoEvents.length > 0 ? `
+                <div style="border-top:1px solid var(--border); padding-top:0.6rem; display:flex; flex-direction:column; gap:0.4rem;">
+                  ${demoEvents.map(ev => `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <div>
+                        <span style="font-size:0.72rem; color:${getStatusColor(ev.status_to)}; margin-right:0.4rem;">${STATUS_AMPEL[ev.status_to]?.label || ev.status_to}</span>
+                        <span style="font-size:0.78rem; color:var(--text);">${escapeHtml(ev.contact_name || '—')}</span>
+                      </div>
+                      <button onclick="openCrmTodoPopup('${ev.contact_id}','${escapeHtml(ev.contact_name||'')}')"
+                        style="padding:0.25rem 0.6rem; border-radius:6px; font-family:var(--font-ui); font-size:0.7rem;
+                               cursor:pointer; border:1px solid var(--accent); background:rgba(236,106,55,0.12);
+                               color:var(--accent); white-space:nowrap;">+ Todo</button>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
             </div>
           `;
         }).join('')
@@ -1234,6 +1273,74 @@ function ampelRow(label, count, total, color) {
       <div style="font-size:0.7rem; color:var(--muted); min-width:2.5rem; text-align:right;">${pct}%</div>
     </div>
   `;
+}
+
+// ── CRM DEMO TODO POPUP ──
+let _crmTodoPending = null;
+let _crmTodoType = 'call';
+
+async function openCrmTodoPopup(contactId, contactName) {
+  _crmTodoType = 'call';
+  _crmTodoPending = { contactId, contactName, firma: contactName, kontakt: '', telefon: '', email: '', website: '' };
+  if (contactId) {
+    const { data: contact } = await SB.from('crm_contacts')
+      .select('firma, kontakt, telefon, email, website')
+      .eq('id', contactId).single();
+    if (contact) Object.assign(_crmTodoPending, contact);
+  }
+  const m = document.getElementById('crm-demo-todo-modal');
+  const today = new Date().toISOString().split('T')[0];
+  m.querySelector('#crm-todo-firma').textContent = _crmTodoPending.firma || '—';
+  m.querySelector('#crm-todo-info').innerHTML =
+    [_crmTodoPending.kontakt, _crmTodoPending.telefon, _crmTodoPending.email, _crmTodoPending.website]
+      .filter(Boolean).map(v => `<span>${escapeHtml(v)}</span>`).join(' · ');
+  m.querySelector('#crm-todo-date').value = today;
+  m.querySelector('#crm-todo-time').value = '';
+  m.querySelector('#crm-todo-notes').value = '';
+  selectCrmTodoType('call');
+  m.classList.remove('hidden');
+}
+
+function closeCrmTodoPopup() {
+  _crmTodoPending = null;
+  document.getElementById('crm-demo-todo-modal').classList.add('hidden');
+}
+
+function selectCrmTodoType(type) {
+  _crmTodoType = type;
+  ['call','bau'].forEach(t => {
+    const btn = document.getElementById('crm-type-' + t);
+    if (!btn) return;
+    btn.style.borderColor = t === type ? 'var(--accent)' : 'var(--border)';
+    btn.style.background  = t === type ? 'rgba(236,106,55,0.15)' : 'transparent';
+    btn.style.color       = t === type ? 'var(--accent)' : 'var(--muted)';
+  });
+}
+
+async function saveCrmTodo() {
+  if (!_crmTodoPending) return;
+  const d = _crmTodoPending;
+  const date = document.getElementById('crm-todo-date')?.value || null;
+  const time = document.getElementById('crm-todo-time')?.value || null;
+  const notizen = document.getElementById('crm-todo-notes')?.value.trim() || '';
+  const firma = d.firma || d.contactName || '';
+  const infoLine = [d.kontakt, d.telefon, d.email, d.website].filter(Boolean).join(' | ');
+  const detail = [infoLine, notizen].filter(Boolean).join('\n');
+  const title = _crmTodoType === 'call'
+    ? `📞 Sales Call: ${firma}`
+    : `🏗️ Bau-Termin: ${firma}`;
+  const { data: { user } } = await SB.auth.getUser();
+  const { error } = await SB.from('tracker_todos').insert({
+    title,
+    detail: detail || null,
+    category: 'rais',
+    relevance: 'high',
+    due_date: date || null,
+    due_time: time || null,
+    created_by: user.id
+  });
+  if (!error) { closeCrmTodoPopup(); }
+  else console.error('CRM Todo error:', error);
 }
 
 // ── DEEP WORK STATE ──
@@ -1792,6 +1899,8 @@ const TODO_RELEVANCE = {
   low:    { label: 'Low',    color: '#7B746B'  },
 };
 let todoView = 'today';
+let todoSearchQuery = '';
+let todoCategoryFilter = '';
 let selectedRelevance = 'medium';
 let selectedRecurring = '';
 let pendingDoneId = null;
@@ -1819,10 +1928,21 @@ async function loadTodos() {
 
 function renderTodos(todos) {
   _todoCache = todos;
-  const open = todos.filter(t => !t.done);
-  const done = todos.filter(t => t.done);
+  let filtered = todos;
+  if (todoSearchQuery) {
+    const q = todoSearchQuery.toLowerCase();
+    filtered = todos.filter(t =>
+      t.title.toLowerCase().includes(q) ||
+      (t.detail || '').toLowerCase().includes(q)
+    );
+  }
+  if (todoCategoryFilter) {
+    filtered = filtered.filter(t => t.category === todoCategoryFilter);
+  }
+  const open = filtered.filter(t => !t.done);
+  const done = filtered.filter(t => t.done);
   document.getElementById('tab-todos').innerHTML = `
-    <div style="display:flex;gap:0.5rem;margin-bottom:1.25rem;">
+    <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">
       <button onclick="switchTodoView('today')"
         style="flex:1;padding:0.6rem;border-radius:8px;font-family:var(--font-ui);font-size:0.8rem;cursor:pointer;
                border:1px solid ${todoView==='today'?'var(--accent)':'var(--border)'};
@@ -1836,6 +1956,27 @@ function renderTodos(todos) {
       <button onclick="openTodoForm()"
         style="padding:0.6rem 1rem;border-radius:8px;font-family:var(--font-ui);font-size:0.8rem;
                cursor:pointer;border:none;background:var(--accent);color:#000;font-weight:600;">+ Neu</button>
+    </div>
+    <div style="position:relative;margin-bottom:0.5rem;">
+      <input type="text" placeholder="Suchen..." value="${escapeHtml(todoSearchQuery)}"
+        oninput="todoSearchQuery=this.value;renderTodos(_todoCache)"
+        style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
+               padding:0.6rem 0.75rem 0.6rem 2rem;color:var(--text);font-family:var(--font-ui);
+               font-size:0.85rem;outline:none;box-sizing:border-box;">
+      <span style="position:absolute;left:0.6rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:0.9rem;pointer-events:none;">🔍</span>
+    </div>
+    <div style="display:flex;gap:0.35rem;overflow-x:auto;padding-bottom:0.35rem;margin-bottom:1rem;scrollbar-width:none;">
+      <button onclick="todoCategoryFilter='';renderTodos(_todoCache)"
+        style="flex-shrink:0;padding:0.3rem 0.65rem;border-radius:20px;font-family:var(--font-ui);font-size:0.72rem;cursor:pointer;white-space:nowrap;
+               border:1px solid ${todoCategoryFilter===''?'var(--accent)':'var(--border)'};
+               background:${todoCategoryFilter===''?'rgba(236,106,55,0.15)':'transparent'};
+               color:${todoCategoryFilter===''?'var(--accent)':'var(--muted)'};">Alle</button>
+      ${Object.entries(TODO_CATEGORIES).map(([k,v])=>`
+        <button onclick="todoCategoryFilter='${k}';renderTodos(_todoCache)"
+          style="flex-shrink:0;padding:0.3rem 0.65rem;border-radius:20px;font-family:var(--font-ui);font-size:0.72rem;cursor:pointer;white-space:nowrap;
+                 border:1px solid ${todoCategoryFilter===k?v.color:'var(--border)'};
+                 background:${todoCategoryFilter===k?v.color+'22':'transparent'};
+                 color:${todoCategoryFilter===k?v.color:'var(--muted)'};">${v.label}</button>`).join('')}
     </div>
     <div id="todos-open-list">
       ${open.length===0?'<div style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem;">Keine offenen To-dos.</div>':open.map(t=>todoCard(t)).join('')}
@@ -1916,8 +2057,9 @@ function todoFormHTML(editData = null) {
     <div style="font-size:0.7rem;letter-spacing:0.15em;color:var(--muted);margin-bottom:1.25rem;">${editData ? 'TO-DO BEARBEITEN' : 'NEUES TO-DO'}</div>
     <input type="text" id="todo-title" placeholder="Was muss erledigt werden?" value="${d.title||''}"
       style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.85rem;color:var(--text);font-family:var(--font-ui);font-size:0.95rem;width:100%;margin-bottom:0.75rem;outline:none;">
-    <input type="text" id="todo-detail" placeholder="Details (optional)" value="${d.detail||''}"
-      style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.85rem;width:100%;margin-bottom:0.75rem;outline:none;">
+    <textarea id="todo-detail" placeholder="Details (optional)"
+      style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.85rem;width:100%;margin-bottom:0.75rem;outline:none;resize:vertical;min-height:60px;transition:border-color 0.2s;"
+      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">${escapeHtml(d.detail||'')}</textarea>
     <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">KATEGORIE</div>
     <select id="todo-category" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.85rem;width:100%;margin-bottom:0.75rem;outline:none;">
       ${Object.entries(TODO_CATEGORIES).map(([k,v])=>`<option value="${k}" ${d.category===k?'selected':''}>${v.label}</option>`).join('')}
@@ -2084,7 +2226,7 @@ async function confirmDone() {
   loadTodos();
 }
 
-function switchTodoView(view) { todoView=view; loadTodos(); }
+function switchTodoView(view) { todoView=view; todoSearchQuery=''; todoCategoryFilter=''; loadTodos(); }
 
 function editDWGoal() {
   const current = localStorage.getItem('dw_weekly_goal_hours') || '20';
@@ -2522,6 +2664,60 @@ function copyWeekReport() {
   });
 }
 </script>
+<!-- CRM DEMO TODO MODAL -->
+<div id="crm-demo-todo-modal" class="hidden"
+  style="position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:400;
+         display:flex; align-items:flex-end; justify-content:center;">
+  <div style="background:var(--surface); border-radius:16px 16px 0 0; padding:1.5rem;
+              width:100%; max-width:480px; border-top:1px solid var(--border); max-height:92dvh; overflow-y:auto;">
+    <div style="font-size:0.7rem; letter-spacing:0.15em; color:var(--muted); margin-bottom:1.25rem;">FOLLOW-UP TODO</div>
+    <div style="font-size:1rem; font-weight:600; color:var(--text); margin-bottom:0.25rem;" id="crm-todo-firma">—</div>
+    <div style="font-size:0.75rem; color:var(--muted); margin-bottom:1.25rem; line-height:1.5;" id="crm-todo-info"></div>
+    <div style="font-size:0.65rem; color:var(--muted); letter-spacing:0.1em; margin-bottom:0.4rem;">TYP</div>
+    <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+      <button id="crm-type-call" onclick="selectCrmTodoType('call')"
+        style="flex:1; padding:0.65rem; border-radius:8px; font-family:var(--font-ui); font-size:0.82rem; cursor:pointer;
+               border:1px solid var(--accent); background:rgba(236,106,55,0.15); color:var(--accent);">
+        📞 Sales Call</button>
+      <button id="crm-type-bau" onclick="selectCrmTodoType('bau')"
+        style="flex:1; padding:0.65rem; border-radius:8px; font-family:var(--font-ui); font-size:0.82rem; cursor:pointer;
+               border:1px solid var(--border); background:transparent; color:var(--muted);">
+        🏗️ Bau-Termin</button>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:1rem;">
+      <div>
+        <div style="font-size:0.65rem; color:var(--muted); letter-spacing:0.1em; margin-bottom:0.4rem;">DATUM</div>
+        <input type="date" id="crm-todo-date"
+          style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:0.75rem;
+                 color:var(--text); font-family:var(--font-ui); font-size:0.8rem; width:100%; outline:none;">
+      </div>
+      <div>
+        <div style="font-size:0.65rem; color:var(--muted); letter-spacing:0.1em; margin-bottom:0.4rem;">UHRZEIT</div>
+        <input type="time" id="crm-todo-time"
+          style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:0.75rem;
+                 color:var(--text); font-family:var(--font-ui); font-size:0.8rem; width:100%; outline:none;">
+      </div>
+    </div>
+    <div style="font-size:0.65rem; color:var(--muted); letter-spacing:0.1em; margin-bottom:0.4rem;">NOTIZEN</div>
+    <textarea id="crm-todo-notes" placeholder="Besonderheiten, Scope, Details..."
+      style="width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px;
+             padding:0.75rem; color:var(--text); font-family:var(--font-ui); font-size:0.85rem;
+             resize:vertical; min-height:80px; outline:none; margin-bottom:1.25rem;
+             transition:border-color 0.2s;"
+      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+      <button onclick="closeCrmTodoPopup()"
+        style="background:transparent; border:1px solid var(--border); border-radius:8px;
+               padding:0.85rem; color:var(--muted); font-family:var(--font-ui); cursor:pointer;">
+        Abbrechen</button>
+      <button onclick="saveCrmTodo()"
+        style="background:var(--accent); border:none; border-radius:8px;
+               padding:0.85rem; color:#000; font-family:var(--font-ui); font-weight:600; cursor:pointer;">
+        Todo speichern</button>
+    </div>
+  </div>
+</div>
+
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
