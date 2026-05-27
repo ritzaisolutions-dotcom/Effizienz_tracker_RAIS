@@ -1100,9 +1100,12 @@ function selectMuscle(m) {
 
 // ── OUTREACH ──
 const STATUS_AMPEL = {
+  'demo_termin':    { color: 'var(--green)',  label: 'Demo-Termin',    tier: 'win' },
   'demo':           { color: 'var(--green)',  label: 'Demo',           tier: 'win' },
   'closing':        { color: 'var(--green)',  label: 'Closing',        tier: 'win' },
+  'callback':       { color: '#86EFAC',       label: 'Callback',       tier: 'warm' },
   'door_open':      { color: '#86EFAC',       label: 'Door Open',      tier: 'warm' },
+  'email_nurture':  { color: 'var(--yellow)', label: 'Email Nurture',  tier: 'neutral' },
   'followup':       { color: 'var(--yellow)', label: 'Follow-up',      tier: 'neutral' },
   'gatekeeper':     { color: 'var(--yellow)', label: 'Gatekeeper',     tier: 'neutral' },
   'nicht_erreicht': { color: 'var(--yellow)', label: 'Nicht erreicht', tier: 'neutral' },
@@ -1229,7 +1232,7 @@ function renderOutreach(sessions, events, period) {
       : sessions.map(s => {
           const sb = s.status_breakdown || {};
           const sEvents = eventsBySession[s.id] || [];
-          const demoEvents = sEvents.filter(e => e.status_to === 'demo' || e.status_to === 'closing');
+          const demoEvents = sEvents.filter(e => ['demo_termin','demo','closing'].includes(e.status_to));
           return `
             <div class="card" style="padding:0.85rem 1rem;">
               <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
