@@ -808,18 +808,17 @@ async function recoverActiveSession() {
     .single();
 
   if (dwData) {
-    dwState = 'active';
+    dwCurrentSessionId = dwData.id;
+    dwState = 'paused';
     dwStartedAt = new Date(dwData.started_at);
-    dwFocusStart = new Date();
-    const elapsed = Math.floor((Date.now() - dwStartedAt.getTime()) / 1000);
-    dwFocusedSeconds = elapsed;
+    dwFocusStart = null;
+    dwFocusedSeconds = dwData.focused_seconds || Math.floor((Date.now() - new Date(dwData.started_at).getTime()) / 1000);
     dwStartLabel = dwData.label || '';
-    
-    dwInterval = setInterval(renderDWTimers, 1000);
+
     renderDWState();
     renderDWTimers();
     dwUpdateBanner();
-    dwActivateMediaSession();
+    showToast('⏸ Session wiederhergestellt — fortsetzen oder beenden');
     return;
   }
 
@@ -832,19 +831,18 @@ async function recoverActiveSession() {
     .single();
 
   if (trData) {
-    trState = 'active';
+    trCurrentSessionId = trData.id;
+    trState = 'paused';
     trStartedAt = new Date(trData.started_at);
-    trActiveStart = new Date();
-    const elapsed = Math.floor((Date.now() - trStartedAt.getTime()) / 1000);
-    trActiveSeconds = elapsed;
+    trActiveStart = null;
+    trActiveSeconds = trData.focused_seconds || Math.floor((Date.now() - new Date(trData.started_at).getTime()) / 1000);
     trSelectedMuscle = trData.label;
 
-    trInterval = setInterval(renderTRTimers, 1000);
     renderTRState();
     renderTRTimers();
-
     document.getElementById('tr-muscle-picker').classList.add('hidden');
     document.getElementById('tr-muscle-display').textContent = trSelectedMuscle.toUpperCase();
+    showToast('⏸ Training wiederhergestellt — fortsetzen oder beenden');
     return;
   }
 }
