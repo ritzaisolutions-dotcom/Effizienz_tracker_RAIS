@@ -158,6 +158,59 @@
     }
     .btn-logout:hover { color: var(--text); border-color: var(--text); }
 
+    .topbar-actions { display: flex; align-items: center; gap: 0.5rem; }
+
+    .btn-icon {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 6px;
+      padding: 0.4rem 0.6rem;
+      font-size: 1rem;
+      cursor: pointer;
+      font-family: var(--font-ui);
+      line-height: 1;
+      touch-action: manipulation;
+    }
+    .btn-icon:hover { color: var(--text); border-color: var(--text); }
+
+    #settings-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 250;
+      background: var(--bg);
+      max-width: 480px;
+      margin: 0 auto;
+      left: 0;
+      right: 0;
+      overflow-y: auto;
+      padding-bottom: 2rem;
+    }
+    #settings-overlay.visible { display: block; }
+
+    #toast {
+      position: fixed;
+      bottom: 5.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(120%);
+      max-width: 420px;
+      width: calc(100% - 2rem);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      font-size: 0.85rem;
+      z-index: 400;
+      transition: transform 0.25s ease;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    #toast.visible { transform: translateX(-50%) translateY(0); }
+
+    .nav-item { font-size: 0.58rem; }
+    .todo-card { touch-action: pan-y; transition: transform 0.15s; }
+    .todo-card.swipe-hint { transform: translateX(4px); }
+
     /* ── SESSION BANNER ── */
     #session-banner {
       display: none;
@@ -261,8 +314,13 @@
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><g transform="translate(0,1024) scale(0.1,-0.1)" fill="#EC6A37" stroke="none"><path d="M5095 7745 c-5 -2 -22 -6 -37 -9 -34 -8 -94 -59 -114 -97 -18 -35 -18 -120 0 -162 7 -18 32 -49 55 -69 l41 -35 0 -776 0 -777 -27 -6 c-51 -11 -104 -25 -119 -31 l-14 -5 0 393 0 394 -70 73 c-38 39 -73 73 -77 73 -5 1 -45 41 -90 89 l-83 88 0 74 0 74 41 39 c22 22 48 53 56 70 l16 29 0 51 1 50 -22 42 c-26 50 -63 78 -126 94 l-47 12 -42 -13 c-79 -23 -128 -76 -142 -153 l-7 -38 12 -45 13 -45 48 -43 49 -44 0 -114 0 -113 155 -155 155 -155 0 -406 0 -407 -17 -8 c-25 -10 -46 -6 -60 13 -30 38 -185 193 -194 193 -6 0 -8 4 -5 9 6 9 -133 146 -149 146 -5 1 -9 6 -8 11 2 12 -137 153 -152 154 -5 0 -10 4 -10 8 0 6 -380 386 -512 511 l-15 14 7 42 6 43 -12 46 -11 46 -39 38 -38 38 -39 12 c-57 17 -92 15 -142 -10 l-45 -23 -29 -42 -29 -42 -5 -49 -4 -49 20 -45 20 -45 33 -26 c43 -32 101 -48 153 -41 l41 6 269 -271 c148 -148 274 -267 279 -264 6 3 7 2 4 -4 -8 -12 497 -516 507 -506 4 4 7 3 5 -2 -1 -6 1 -18 6 -28 l7 -17 -12 -15 -13 -16 -403 3 -404 3 0 10 c0 6 -62 72 -137 148 l-138 137 -122 0 -123 0 0 9 c0 5 -12 24 -27 42 -52 62 -151 86 -224 55 -38 -16 -93 -69 -82 -79 3 -4 2 -7 -4 -7 -14 0 -33 -54 -33 -92 0 -56 67 -167 92 -152 4 3 8 1 8 -4 0 -25 82 -39 150 -25 l33 6 51 49 50 48 76 0 77 0 23 -25 c12 -13 28 -22 34 -18 l11 6 -8 -8 -8 -9 128 -128 128 -128 384 0 383 0 -6 -22 c-3 -13 -11 -49 -18 -80 l-12 -58 -773 0 -773 0 -41 45 c-23 25 -44 43 -47 41 -2 -3 -14 1 -26 9 l-20 15 -49 0 -48 0 -37 -19 c-97 -50 -136 -153 -93 -246 20 -43 77 -103 87 -92 4 3 13 0 21 -8 l14 -15 52 0 51 0 42 20 42 21 23 34 24 35 776 0 777 0 5 -27 6 -28 -385 -385 -384 -385 -95 -2 -96 -2 -12 16 c-75 97 -162 126 -252 84 -122 -56 -152 -206 -60 -302 52 -55 123 -72 207 -49 l37 11 39 44 40 45 126 0 126 0 0 10 c0 5 4 9 9 7 5 -1 173 161 374 361 200 199 369 362 374 362 6 0 27 -27 47 -60 l38 -61 -11 -13 c-6 -7 -8 -16 -4 -19 3 -4 0 -7 -8 -7 -11 0 -706 -691 -973 -969 l-68 -71 -63 0 c-102 0 -158 -33 -196 -115 -37 -80 -18 -159 52 -219 l42 -36 34 -6 c86 -16 167 19 209 92 l25 43 2 78 2 78 11 -2 c5 -1 246 234 534 523 289 288 530 524 535 524 6 0 16 -5 23 -12 l12 -12 0 -401 0 -400 -155 -155 -155 -155 0 -115 0 -115 -29 -19 c-37 -25 -79 -90 -87 -134 l-7 -35 17 -53 17 -52 34 -31 c19 -16 54 -35 76 -41 l42 -12 36 7 c20 4 55 18 79 31 l42 25 21 41 21 41 -1 55 0 55 -26 38 c-13 21 -38 48 -55 60 l-30 23 0 80 0 81 140 138 c78 75 137 137 133 137 -4 0 3 6 17 13 l25 13 3 398 2 398 23 -6 c12 -3 48 -11 80 -18 l57 -12 0 -775 0 -774 -39 -33 c-21 -18 -46 -49 -55 -68 l-16 -34 0 -49 0 -48 19 -42 19 -42 40 -26 39 -26 50 -5 50 -6 46 20 c52 23 101 67 92 82 -3 6 -1 10 5 10 6 0 9 4 5 9 -3 5 -1 12 5 16 5 3 10 27 10 53 l0 47 -19 40 c-18 39 -71 98 -71 79 0 -5 -5 -2 -10 6 l-10 15 0 776 0 775 73 17 c39 10 75 17 80 17 4 0 7 -177 7 -393 l0 -392 155 -155 155 -155 0 -83 0 -83 -37 -32 c-83 -73 -95 -186 -26 -267 14 -17 28 -28 31 -26 3 3 10 -1 16 -10 6 -8 31 -20 56 -25 l44 -10 48 11 48 12 39 38 39 38 10 47 10 48 -13 51 -13 51 -46 42 -46 41 0 114 0 113 -155 155 -155 155 0 405 0 405 19 12 18 11 113 -113 c63 -63 118 -111 123 -108 6 3 7 2 4 -4 -3 -5 185 -200 418 -433 l424 -424 -6 -46 -5 -47 12 -37 c26 -79 103 -135 188 -136 l43 0 38 20 c120 60 145 204 53 300 -46 49 -79 61 -156 59 l-61 -2 -150 152 c-403 409 -858 861 -866 861 -6 0 -7 5 -4 10 l6 10 -24 9 c-13 5 -27 19 -30 30 l-5 20 17 15 18 16 380 0 380 0 117 -120 116 -120 105 0 105 0 47 -49 48 -49 45 -12 c50 -14 93 -9 144 15 l35 17 31 46 30 45 0 54 c0 30 -6 68 -14 86 -14 36 -82 101 -96 92 -4 -3 -10 0 -12 6 l-4 12 -55 0 -54 0 -42 -22 c-24 -11 -52 -35 -65 -51 l-22 -30 -81 0 -80 0 -120 120 -120 120 -373 0 -374 0 5 13 c3 6 13 42 23 80 l18 67 772 0 772 0 27 -36 c15 -20 46 -45 69 -55 l41 -19 46 0 c58 0 105 19 143 59 17 17 26 31 22 31 -4 0 -1 7 8 15 8 8 18 35 21 59 l7 45 -12 36 c-48 146 -229 179 -340 61 l-34 -36 -771 0 -771 0 -17 73 c-10 39 -17 75 -17 80 0 4 170 7 377 7 l377 0 156 155 156 155 78 0 78 0 54 -49 54 -50 44 -6 c107 -16 200 40 226 137 l11 40 -6 39 c-4 22 -13 46 -20 53 -8 7 -12 16 -10 18 9 9 -61 66 -94 77 -90 30 -201 -10 -240 -86 l-12 -23 -117 0 -117 0 -138 -137 c-75 -76 -136 -142 -134 -148 l2 -10 -412 -3 -412 -3 -10 20 -11 19 115 113 c63 62 111 117 108 122 -3 6 -2 7 4 4 8 -5 763 744 821 816 l22 27 73 0 73 0 41 27 41 26 23 41 23 41 0 54 0 55 -11 3 c-7 3 -10 10 -7 17 3 7 -13 31 -35 54 l-40 41 -38 10 c-57 16 -84 13 -140 -14 l-51 -26 -28 -41 -29 -41 0 -81 -1 -81 -10 0 c-13 0 -1024 -1014 -1024 -1027 0 -5 -10 -12 -22 -17 l-23 -8 -17 11 -18 11 0 385 0 385 46 48 c25 26 49 47 54 47 5 0 16 10 24 22 l16 22 0 106 0 105 28 19 c42 29 70 69 83 118 l12 45 -13 48 -13 47 -41 39 -40 39 -40 11 -40 11 -42 -7 -42 -6 -39 -28 c-22 -16 -48 -46 -58 -67 l-19 -39 1 -54 0 -53 14 -9 c8 -5 10 -9 6 -9 -14 0 27 -61 56 -82 l27 -19 0 -78 0 -79 -70 -66 -70 -66 0 -374 0 -374 -52 13 c-29 7 -65 16 -80 19 l-28 6 0 778 0 777 36 29 c44 35 73 97 74 155 l0 45 -20 40 c-33 68 -136 121 -195 101z"/></g></svg>
       RAIS PERFORMANCE
     </span>
-    <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    <div class="topbar-actions">
+      <button class="btn-icon" onclick="openSettingsHub()" aria-label="Einstellungen">⚙️</button>
+      <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    </div>
   </div>
+
+  <div id="toast"></div>
 
   <!-- Active session banner — tapping navigates to Deep Work tab -->
   <div id="session-banner" onclick="navToDeepWork()">
@@ -444,70 +502,9 @@
     </div>
 
     <div class="tab-panel" id="tab-outreach"></div>
-    <div class="tab-panel" id="tab-content">
-      <div class="section-title">Content veröffentlicht</div>
-
-      <!-- Quick-Add Card -->
-      <div class="card" style="margin-bottom:1.25rem;">
-        <div style="font-size:0.7rem; color:var(--muted); letter-spacing:0.12em; margin-bottom:0.75rem;">FORMAT</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:1rem;">
-          <button class="content-format-btn" id="cfmt-lfc" onclick="selectContentFormat('lfc')"
-            style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
-                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
-                   cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
-            🎙<br><strong style="font-size:0.9rem;">LFC</strong><br><span style="font-size:0.68rem;">Long Form</span>
-          </button>
-          <button class="content-format-btn" id="cfmt-sfc" onclick="selectContentFormat('sfc')"
-            style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
-                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
-                   cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
-            ⚡<br><strong style="font-size:0.9rem;">SFC</strong><br><span style="font-size:0.68rem;">Short Form</span>
-          </button>
-          <button class="content-format-btn" id="cfmt-artikel" onclick="selectContentFormat('artikel')"
-            style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
-                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
-                   cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
-            ✍️<br><strong style="font-size:0.9rem;">Artikel</strong><br><span style="font-size:0.68rem;">Fundament</span>
-          </button>
-          <button class="content-format-btn" id="cfmt-post" onclick="selectContentFormat('post')"
-            style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
-                   border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
-                   cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
-            📸<br><strong style="font-size:0.9rem;">Post</strong><br><span style="font-size:0.68rem;">Instagram</span>
-          </button>
-        </div>
-
-        <div id="content-platform-info" style="font-size:0.72rem; color:var(--muted); margin-bottom:1rem; min-height:1.2rem; letter-spacing:0.02em;"></div>
-
-        <input type="text" id="content-title-input" placeholder="Titel (optional)"
-          style="background:var(--bg); border:1px solid var(--border); border-radius:8px;
-                 padding:0.75rem; color:var(--text); font-family:var(--font-ui);
-                 font-size:0.9rem; width:100%; margin-bottom:1rem; outline:none;">
-
-        <button id="content-save-btn" onclick="saveContent()" disabled
-          style="width:100%; background:var(--accent); border:none; border-radius:8px;
-                 padding:1rem; color:#000; font-family:var(--font-ui); font-weight:600;
-                 font-size:0.95rem; cursor:not-allowed; opacity:0.4; touch-action:manipulation;">
-          + Speichern
-        </button>
-      </div>
-
-      <!-- Log -->
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
-        <div class="section-title" style="margin-bottom:0;">DIESE WOCHE</div>
-        <div id="content-week-count" style="font-size:0.75rem; color:var(--muted);"></div>
-      </div>
-      <div id="content-log-list"></div>
-    </div>
 
     <!-- TO-DOS TAB -->
     <div class="tab-panel" id="tab-todos"></div>
-
-    <!-- SETTINGS TAB -->
-    <div class="tab-panel" id="tab-settings"></div>
-
-    <!-- CHAT TAB -->
-    <div class="tab-panel" id="tab-chat"></div>
   </div>
 
   <nav class="bottom-nav">
@@ -518,6 +515,12 @@
       </svg>
       Overview<span id="sync-badge" style="display:none; position:absolute; top:6px; right:10px;
         width:7px; height:7px; background:var(--yellow); border-radius:50%;"></span>
+    </button>
+    <button class="nav-item" data-tab="outreach">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+      </svg>
+      Outreach
     </button>
     <button class="nav-item" data-tab="deepwork">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -531,38 +534,87 @@
       </svg>
       Training
     </button>
-    <button class="nav-item" data-tab="outreach">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
-      </svg>
-      Outreach
-    </button>
-    <button class="nav-item" data-tab="content">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-      </svg>
-      Content
-    </button>
-    <button class="nav-item" data-tab="todos">
+    <button class="nav-item" data-tab="todos" style="position:relative;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
       </svg>
-      To-dos
-    </button>
-    <button class="nav-item" data-tab="settings">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-      </svg>
-      Settings
-    </button>
-    <button class="nav-item" data-tab="chat">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-      </svg>
-      Bot
+      To-dos<span id="todo-nav-badge" style="display:none; position:absolute; top:6px; right:6px;
+        min-width:16px; height:16px; padding:0 4px; background:var(--red); color:#fff; border-radius:8px;
+        font-size:0.55rem; font-family:var(--font-mono); line-height:16px; text-align:center;"></span>
     </button>
   </nav>
+
+  <!-- Settings hub: Einstellungen, Content, Chat -->
+  <div id="settings-overlay">
+    <div class="topbar" style="position:relative;">
+      <button class="btn-icon" id="settings-back-btn" onclick="settingsHubBack()" style="display:none;">←</button>
+      <span class="topbar-logo" id="settings-hub-title" style="letter-spacing:0.12em; font-size:0.75rem;">EINSTELLUNGEN</span>
+      <button class="btn-icon" onclick="closeSettingsHub()">✕</button>
+    </div>
+    <div class="tab-content" style="padding-bottom:2rem;">
+      <div id="settings-menu" style="padding:0 0.25rem;">
+        <button type="button" onclick="openSettingsSection('app')"
+          style="display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.15rem;margin-bottom:0.5rem;color:var(--text);font-family:var(--font-ui);font-size:0.95rem;cursor:pointer;">
+          ⚙️ App-Einstellungen</button>
+        <button type="button" onclick="openSettingsSection('content')"
+          style="display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.15rem;margin-bottom:0.5rem;color:var(--text);font-family:var(--font-ui);font-size:0.95rem;cursor:pointer;">
+          🎬 Content-Log</button>
+        <button type="button" onclick="openSettingsSection('chat')"
+          style="display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.15rem;margin-bottom:0.5rem;color:var(--text);font-family:var(--font-ui);font-size:0.95rem;cursor:pointer;">
+          💬 Chat Agent</button>
+      </div>
+      <div class="tab-panel hidden" id="tab-settings"></div>
+      <div class="tab-panel hidden" id="tab-content">
+        <div class="section-title">Content veröffentlicht</div>
+        <div class="card" style="margin-bottom:1.25rem;">
+          <div style="font-size:0.7rem; color:var(--muted); letter-spacing:0.12em; margin-bottom:0.75rem;">FORMAT</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:1rem;">
+            <button class="content-format-btn" id="cfmt-lfc" onclick="selectContentFormat('lfc')"
+              style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
+                     border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
+                     cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
+              🎙<br><strong style="font-size:0.9rem;">LFC</strong><br><span style="font-size:0.68rem;">Long Form</span>
+            </button>
+            <button class="content-format-btn" id="cfmt-sfc" onclick="selectContentFormat('sfc')"
+              style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
+                     border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
+                     cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
+              ⚡<br><strong style="font-size:0.9rem;">SFC</strong><br><span style="font-size:0.68rem;">Short Form</span>
+            </button>
+            <button class="content-format-btn" id="cfmt-artikel" onclick="selectContentFormat('artikel')"
+              style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
+                     border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
+                     cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
+              ✍️<br><strong style="font-size:0.9rem;">Artikel</strong><br><span style="font-size:0.68rem;">Fundament</span>
+            </button>
+            <button class="content-format-btn" id="cfmt-post" onclick="selectContentFormat('post')"
+              style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
+                     border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
+                     cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
+              📸<br><strong style="font-size:0.9rem;">Post</strong><br><span style="font-size:0.68rem;">Instagram</span>
+            </button>
+          </div>
+          <div id="content-platform-info" style="font-size:0.72rem; color:var(--muted); margin-bottom:1rem; min-height:1.2rem; letter-spacing:0.02em;"></div>
+          <input type="text" id="content-title-input" placeholder="Titel (optional)"
+            style="background:var(--bg); border:1px solid var(--border); border-radius:8px;
+                   padding:0.75rem; color:var(--text); font-family:var(--font-ui);
+                   font-size:0.9rem; width:100%; margin-bottom:1rem; outline:none;">
+          <button id="content-save-btn" onclick="saveContent()" disabled
+            style="width:100%; background:var(--accent); border:none; border-radius:8px;
+                   padding:1rem; color:#000; font-family:var(--font-ui); font-weight:600;
+                   font-size:0.95rem; cursor:not-allowed; opacity:0.4; touch-action:manipulation;">
+            + Speichern
+          </button>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+          <div class="section-title" style="margin-bottom:0;">DIESE WOCHE</div>
+          <div id="content-week-count" style="font-size:0.75rem; color:var(--muted);"></div>
+        </div>
+        <div id="content-log-list"></div>
+      </div>
+      <div class="tab-panel hidden" id="tab-chat"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -594,6 +646,76 @@ function getLocalDateString(date = new Date()) {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function addDaysToLocalDateString(days, from = new Date()) {
+  const d = new Date(from);
+  d.setDate(d.getDate() + days);
+  return getLocalDateString(d);
+}
+
+let _toastTimer = null;
+function showToast(message, durationMs = 2800) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = message;
+  el.classList.add('visible');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('visible'), durationMs);
+}
+
+let _settingsHubSection = null;
+
+function openSettingsHub() {
+  _settingsHubSection = null;
+  document.getElementById('settings-overlay').classList.add('visible');
+  document.getElementById('settings-menu').style.display = 'block';
+  document.getElementById('settings-back-btn').style.display = 'none';
+  document.getElementById('settings-hub-title').textContent = 'EINSTELLUNGEN';
+  ['tab-settings', 'tab-content', 'tab-chat'].forEach(id => {
+    document.getElementById(id).classList.add('hidden');
+    document.getElementById(id).classList.remove('active');
+  });
+}
+
+function closeSettingsHub() {
+  document.getElementById('settings-overlay').classList.remove('visible');
+  _settingsHubSection = null;
+}
+
+function settingsHubBack() {
+  openSettingsHub();
+}
+
+function openSettingsSection(section) {
+  _settingsHubSection = section;
+  document.getElementById('settings-menu').style.display = 'none';
+  document.getElementById('settings-back-btn').style.display = 'inline-block';
+  const titles = { app: 'APP-EINSTELLUNGEN', content: 'CONTENT', chat: 'CHAT AGENT' };
+  document.getElementById('settings-hub-title').textContent = titles[section] || 'EINSTELLUNGEN';
+  ['tab-settings', 'tab-content', 'tab-chat'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.add('hidden');
+    el.classList.remove('active');
+  });
+  const panelId = section === 'app' ? 'tab-settings' : section === 'content' ? 'tab-content' : 'tab-chat';
+  const panel = document.getElementById(panelId);
+  panel.classList.remove('hidden');
+  panel.classList.add('active');
+  if (section === 'app') loadSettings();
+  else if (section === 'content') loadContentLog();
+  else if (section === 'chat') loadChat();
+}
+
+function switchTab(tab) {
+  closeSettingsHub();
+  document.querySelectorAll('.bottom-nav .nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#app-shell > .tab-content > .tab-panel').forEach(p => p.classList.remove('active'));
+  const btn = document.querySelector(`.bottom-nav .nav-item[data-tab="${tab}"]`);
+  if (btn) btn.classList.add('active');
+  const panel = document.getElementById('tab-' + tab);
+  if (panel) panel.classList.add('active');
+  TAB_ON_ACTIVATE[tab]?.();
 }
 
 // Get local midnight as UTC ISO string for Supabase queries
@@ -661,28 +783,21 @@ function showApp() {
   initMusclePicker();
   updateSyncBadge();
   flushSyncQueue();
+  updateTodoNavBadge();
 }
 
 // ── TAB NAVIGATION ──
 const TAB_ON_ACTIVATE = {
   training: () => { if (trState === 'idle') initMusclePicker(); loadTRToday(); },
   outreach: () => loadOutreach('today'),
-  content:  () => loadContentLog(),
   todos:    () => loadTodos(),
-  settings: () => loadSettings(),
-  chat:     () => loadChat(),
 };
 
 function initTabs() {
-  document.querySelectorAll('.nav-item').forEach(btn => {
+  document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
       playClickSound('tap'); triggerHaptic([8]);
-      const tab = btn.dataset.tab;
-      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('tab-' + tab).classList.add('active');
-      TAB_ON_ACTIVATE[tab]?.();
+      switchTab(btn.dataset.tab);
     });
   });
 }
@@ -1343,8 +1458,11 @@ async function saveCrmTodo() {
     due_time: time || null,
     created_by: user.id
   });
-  if (!error) { closeCrmTodoPopup(); }
-  else console.error('CRM Todo error:', error);
+  if (!error) {
+    closeCrmTodoPopup();
+    showToast('To-do gespeichert');
+    switchTab('todos');
+  } else console.error('CRM Todo error:', error);
 }
 
 // ── DEEP WORK STATE ──
@@ -1430,12 +1548,7 @@ function dwUpdateBanner() {
   }
 }
 
-function navToDeepWork() {
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelector('[data-tab="deepwork"]').classList.add('active');
-  document.getElementById('tab-deepwork').classList.add('active');
-}
+function navToDeepWork() { switchTab('deepwork'); }
 
 let _dwSilentAudio = null;
 
@@ -1802,6 +1915,8 @@ async function loadOverview() {
   const effWoche = calcEffizienz(allSessionsWeek);
   const effMonat = calcEffizienz(allSessionsMonth);
   const dateStr = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+  const orGoal = parseInt(localStorage.getItem('outreach_daily_goal') || '50', 10);
+  const orPct = Math.min(100, Math.round((callsTodayPlayed / orGoal) * 100));
 
   document.getElementById('tab-overview').innerHTML = `
     <div style="margin-bottom:0.5rem; color:var(--muted); font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase;">
@@ -1835,11 +1950,19 @@ async function loadOverview() {
         ${effCol('Monat', effMonat)}
       </div>
     </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:1.25rem;">
-      ${kpiCard('Deep Work', formatTime(dwTodayTotal), 'fokus', 'var(--accent)')}
-      ${kpiCard('Training', formatTime(trainTodayTotal), 'aktiv', 'var(--green)')}
-      ${kpiCard('Calls', callsTodayPlayed.toString(), 'gespielt', 'var(--text)')}
-      ${kpiCard('Content', contentCount.toString(), 'diese Woche', 'var(--text)')}
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem; margin-bottom:1.25rem;">
+      ${kpiCard('Arbeit', formatTime(dwTodayTotal), 'Deep Work', 'var(--accent)')}
+      ${kpiCard('Sport', formatTime(trainTodayTotal), 'Training', 'var(--green)')}
+      ${kpiCard('Outreach', callsTodayPlayed.toString(), 'Leads heute', 'var(--text)')}
+    </div>
+    <div class="card" style="margin-bottom:0.75rem;">
+      <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--muted); margin-bottom:0.35rem;">
+        <span>OUTREACH TAGESZIEL</span>
+        <span style="font-family:var(--font-mono);">${callsTodayPlayed} / ${orGoal}</span>
+      </div>
+      <div style="background:var(--border); border-radius:4px; height:6px; overflow:hidden;">
+        <div style="background:var(--text); height:100%; width:${orPct}%; border-radius:4px; transition:width 0.3s;"></div>
+      </div>
     </div>
     <div class="card">
       <div class="section-title">DIESE WOCHE</div>
@@ -1875,11 +1998,17 @@ async function loadOverview() {
       </div>
       <div style="font-size:0.82rem; color:var(--text); line-height:1.5;">${escapeHtml(lastNote.notes)}</div>
     </div>` : ''}
-    <div style="margin-top:0.75rem; text-align:center;">
+    <div style="margin-top:0.75rem; display:flex; flex-direction:column; gap:0.5rem; align-items:center;">
+      <button onclick="switchTab('todos'); switchTodoView('tomorrow')"
+        style="background:transparent; border:1px solid var(--border); border-radius:8px;
+               padding:0.6rem 1.2rem; color:var(--muted); font-family:var(--font-ui);
+               font-size:0.8rem; cursor:pointer; touch-action:manipulation; width:100%; max-width:280px;">
+        📅 Morgen planen
+      </button>
       <button id="week-report-btn" onclick="copyWeekReport()"
         style="background:transparent; border:1px solid var(--border); border-radius:8px;
                padding:0.6rem 1.2rem; color:var(--muted); font-family:var(--font-ui);
-               font-size:0.8rem; cursor:pointer; touch-action:manipulation;">
+               font-size:0.8rem; cursor:pointer; touch-action:manipulation; width:100%; max-width:280px;">
         📋 Woche kopieren
       </button>
     </div>
@@ -1902,15 +2031,111 @@ const TODO_RELEVANCE = {
   medium: { label: 'Medium', color: '#F37A48' },
   low:    { label: 'Low',    color: '#7B746B'  },
 };
+const RELEVANCE_ORDER = { high: 0, medium: 1, low: 2 };
+const CATEGORY_ORDER = Object.keys(TODO_CATEGORIES);
+
 let todoView = 'today';
 let todoSearchQuery = '';
 let todoCategoryFilter = '';
+let todoRelevanceFilter = '';
+let todoSortBy = localStorage.getItem('todo_sort_by') || 'date';
+let _todoFormDefaultDate = null;
 let selectedRelevance = 'medium';
 let selectedRecurring = '';
 let pendingDoneId = null;
 let editingTodoId = null;
 let _todoActionsData = null;
 let _todoCache = [];
+
+function setTodoSortBy(mode) {
+  todoSortBy = mode;
+  localStorage.setItem('todo_sort_by', mode);
+  renderTodos(_todoCache);
+}
+
+function compareTodoDate(a, b) {
+  const today = getLocalDateString();
+  const rank = t => {
+    if (!t.due_date) return 3;
+    if (t.due_date < today) return 0;
+    if (t.due_date === today) return 1;
+    return 2;
+  };
+  const ra = rank(a), rb = rank(b);
+  if (ra !== rb) return ra - rb;
+  if (a.due_date !== b.due_date) return (a.due_date || '').localeCompare(b.due_date || '');
+  return (a.due_time || '').localeCompare(b.due_time || '');
+}
+
+function sortTodoList(items, sortBy, isDone) {
+  const list = [...items];
+  if (isDone) {
+    if (sortBy === 'category') {
+      list.sort((a, b) => {
+        const ca = CATEGORY_ORDER.indexOf(a.category);
+        const cb = CATEGORY_ORDER.indexOf(b.category);
+        if (ca !== cb) return (ca < 0 ? 99 : ca) - (cb < 0 ? 99 : cb);
+        return (b.done_at || '').localeCompare(a.done_at || '');
+      });
+    } else if (sortBy === 'relevance') {
+      list.sort((a, b) => {
+        const ra = RELEVANCE_ORDER[a.relevance] ?? 9;
+        const rb = RELEVANCE_ORDER[b.relevance] ?? 9;
+        if (ra !== rb) return ra - rb;
+        return (b.done_at || '').localeCompare(a.done_at || '');
+      });
+    } else {
+      list.sort((a, b) => (b.done_at || '').localeCompare(a.done_at || ''));
+    }
+    return list;
+  }
+  list.sort((a, b) => {
+    if (sortBy === 'category') {
+      const ca = CATEGORY_ORDER.indexOf(a.category);
+      const cb = CATEGORY_ORDER.indexOf(b.category);
+      if (ca !== cb) return (ca < 0 ? 99 : ca) - (cb < 0 ? 99 : cb);
+      const dc = compareTodoDate(a, b);
+      if (dc) return dc;
+    } else if (sortBy === 'relevance') {
+      const ra = RELEVANCE_ORDER[a.relevance] ?? 9;
+      const rb = RELEVANCE_ORDER[b.relevance] ?? 9;
+      if (ra !== rb) return ra - rb;
+      const dc = compareTodoDate(a, b);
+      if (dc) return dc;
+    } else {
+      const dc = compareTodoDate(a, b);
+      if (dc) return dc;
+    }
+    const ra = RELEVANCE_ORDER[a.relevance] ?? 9;
+    const rb = RELEVANCE_ORDER[b.relevance] ?? 9;
+    if (ra !== rb) return ra - rb;
+    return (a.title || '').localeCompare(b.title || '');
+  });
+  return list;
+}
+
+function todoViewBtnStyle(view) {
+  const active = todoView === view;
+  return `flex:1;padding:0.55rem 0.35rem;border-radius:8px;font-family:var(--font-ui);font-size:0.72rem;cursor:pointer;
+    border:1px solid ${active ? 'var(--accent)' : 'var(--border)'};
+    background:${active ? 'rgba(236,106,55,0.1)' : 'transparent'};
+    color:${active ? 'var(--accent)' : 'var(--muted)'};`;
+}
+
+function todoFilterPillStyle(active, color) {
+  return `flex-shrink:0;padding:0.3rem 0.65rem;border-radius:20px;font-family:var(--font-ui);font-size:0.72rem;cursor:pointer;white-space:nowrap;
+    border:1px solid ${active ? (color || 'var(--accent)') : 'var(--border)'};
+    background:${active ? (color ? color + '22' : 'rgba(236,106,55,0.15)') : 'transparent'};
+    color:${active ? (color || 'var(--accent)') : 'var(--muted)'};`;
+}
+
+function todoSortChipStyle(mode) {
+  const active = todoSortBy === mode;
+  return `flex:1;padding:0.45rem 0;border-radius:8px;font-family:var(--font-ui);font-size:0.72rem;cursor:pointer;
+    border:1px solid ${active ? 'var(--accent)' : 'var(--border)'};
+    background:${active ? 'rgba(236,106,55,0.12)' : 'transparent'};
+    color:${active ? 'var(--accent)' : 'var(--muted)'};`;
+}
 
 async function loadTodos() {
   const { data: { user } } = await SB.auth.getUser();
@@ -1919,6 +2144,8 @@ async function loadTodos() {
     .order('done', { ascending: true }).order('created_at', { ascending: false });
   if (todoView === 'today') {
     query = query.or(`due_date.eq.${today},due_date.is.null`).eq('done', false);
+  } else if (todoView === 'tomorrow') {
+    query = query.eq('due_date', addDaysToLocalDateString(1)).eq('done', false);
   } else {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -1928,6 +2155,27 @@ async function loadTodos() {
   const { data, error } = await query;
   if (error) { console.error(error); return; }
   renderTodos(data || []);
+  updateTodoNavBadge();
+}
+
+async function updateTodoNavBadge() {
+  const badge = document.getElementById('todo-nav-badge');
+  if (!badge) return;
+  try {
+    const { data: { user } } = await SB.auth.getUser();
+    if (!user) return;
+    const today = getLocalDateString();
+    const { data } = await SB.from('tracker_todos').select('id')
+      .eq('created_by', user.id).eq('done', false)
+      .or(`due_date.eq.${today},due_date.is.null,due_date.lt.${today}`);
+    const count = (data || []).length;
+    if (count > 0) {
+      badge.style.display = 'block';
+      badge.textContent = count > 9 ? '9+' : String(count);
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch (_) { /* ignore */ }
 }
 
 function renderTodos(todos) {
@@ -1943,23 +2191,26 @@ function renderTodos(todos) {
   if (todoCategoryFilter) {
     filtered = filtered.filter(t => t.category === todoCategoryFilter);
   }
-  const open = filtered.filter(t => !t.done);
-  const done = filtered.filter(t => t.done);
+  if (todoRelevanceFilter) {
+    filtered = filtered.filter(t => t.relevance === todoRelevanceFilter);
+  }
+  let open = sortTodoList(filtered.filter(t => !t.done), todoSortBy, false);
+  let done = sortTodoList(filtered.filter(t => t.done), todoSortBy, true);
+
+  const emptyMsg = todoView === 'tomorrow'
+    ? 'Keine To-dos für morgen. Tippe + Neu um zu planen.'
+    : todoView === 'today'
+      ? 'Keine offenen To-dos für heute.'
+      : 'Keine To-dos in dieser Ansicht.';
+
   document.getElementById('tab-todos').innerHTML = `
-    <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">
-      <button onclick="switchTodoView('today')"
-        style="flex:1;padding:0.6rem;border-radius:8px;font-family:var(--font-ui);font-size:0.8rem;cursor:pointer;
-               border:1px solid ${todoView==='today'?'var(--accent)':'var(--border)'};
-               background:${todoView==='today'?'rgba(236,106,55,0.1)':'transparent'};
-               color:${todoView==='today'?'var(--accent)':'var(--muted)'};">Heute</button>
-      <button onclick="switchTodoView('all')"
-        style="flex:1;padding:0.6rem;border-radius:8px;font-family:var(--font-ui);font-size:0.8rem;cursor:pointer;
-               border:1px solid ${todoView==='all'?'var(--accent)':'var(--border)'};
-               background:${todoView==='all'?'rgba(236,106,55,0.1)':'transparent'};
-               color:${todoView==='all'?'var(--accent)':'var(--muted)'};">Alle</button>
+    <div style="display:flex;gap:0.35rem;margin-bottom:0.75rem;align-items:stretch;">
+      <button onclick="switchTodoView('today')" style="${todoViewBtnStyle('today')}">Heute</button>
+      <button onclick="switchTodoView('tomorrow')" style="${todoViewBtnStyle('tomorrow')}">Morgen</button>
+      <button onclick="switchTodoView('all')" style="${todoViewBtnStyle('all')}">Alle</button>
       <button onclick="openTodoForm()"
-        style="padding:0.6rem 1rem;border-radius:8px;font-family:var(--font-ui);font-size:0.8rem;
-               cursor:pointer;border:none;background:var(--accent);color:#000;font-weight:600;">+ Neu</button>
+        style="padding:0.55rem 0.85rem;border-radius:8px;font-family:var(--font-ui);font-size:0.72rem;
+               cursor:pointer;border:none;background:var(--accent);color:#000;font-weight:600;flex-shrink:0;">+ Neu</button>
     </div>
     <div style="position:relative;margin-bottom:0.5rem;">
       <input type="text" placeholder="Suchen..." value="${escapeHtml(todoSearchQuery)}"
@@ -1969,21 +2220,26 @@ function renderTodos(todos) {
                font-size:0.85rem;outline:none;box-sizing:border-box;">
       <span style="position:absolute;left:0.6rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:0.9rem;pointer-events:none;">🔍</span>
     </div>
-    <div style="display:flex;gap:0.35rem;overflow-x:auto;padding-bottom:0.35rem;margin-bottom:1rem;scrollbar-width:none;">
-      <button onclick="todoCategoryFilter='';renderTodos(_todoCache)"
-        style="flex-shrink:0;padding:0.3rem 0.65rem;border-radius:20px;font-family:var(--font-ui);font-size:0.72rem;cursor:pointer;white-space:nowrap;
-               border:1px solid ${todoCategoryFilter===''?'var(--accent)':'var(--border)'};
-               background:${todoCategoryFilter===''?'rgba(236,106,55,0.15)':'transparent'};
-               color:${todoCategoryFilter===''?'var(--accent)':'var(--muted)'};">Alle</button>
+    <div style="font-size:0.6rem;color:var(--muted);letter-spacing:0.12em;margin-bottom:0.35rem;">KATEGORIE</div>
+    <div style="display:flex;gap:0.35rem;overflow-x:auto;padding-bottom:0.35rem;margin-bottom:0.65rem;scrollbar-width:none;">
+      <button onclick="todoCategoryFilter='';renderTodos(_todoCache)" style="${todoFilterPillStyle(!todoCategoryFilter)}">Alle</button>
       ${Object.entries(TODO_CATEGORIES).map(([k,v])=>`
-        <button onclick="todoCategoryFilter='${k}';renderTodos(_todoCache)"
-          style="flex-shrink:0;padding:0.3rem 0.65rem;border-radius:20px;font-family:var(--font-ui);font-size:0.72rem;cursor:pointer;white-space:nowrap;
-                 border:1px solid ${todoCategoryFilter===k?v.color:'var(--border)'};
-                 background:${todoCategoryFilter===k?v.color+'22':'transparent'};
-                 color:${todoCategoryFilter===k?v.color:'var(--muted)'};">${v.label}</button>`).join('')}
+        <button onclick="todoCategoryFilter='${k}';renderTodos(_todoCache)" style="${todoFilterPillStyle(todoCategoryFilter===k, v.color)}">${v.label}</button>`).join('')}
+    </div>
+    <div style="font-size:0.6rem;color:var(--muted);letter-spacing:0.12em;margin-bottom:0.35rem;">DRINGLICHKEIT</div>
+    <div style="display:flex;gap:0.35rem;overflow-x:auto;padding-bottom:0.35rem;margin-bottom:0.65rem;scrollbar-width:none;">
+      <button onclick="todoRelevanceFilter='';renderTodos(_todoCache)" style="${todoFilterPillStyle(!todoRelevanceFilter)}">Alle</button>
+      ${Object.entries(TODO_RELEVANCE).map(([k,v])=>`
+        <button onclick="todoRelevanceFilter='${k}';renderTodos(_todoCache)" style="${todoFilterPillStyle(todoRelevanceFilter===k, v.color)}">${v.label}</button>`).join('')}
+    </div>
+    <div style="font-size:0.6rem;color:var(--muted);letter-spacing:0.12em;margin-bottom:0.35rem;">SORTIEREN</div>
+    <div style="display:flex;gap:0.35rem;margin-bottom:1rem;">
+      <button onclick="setTodoSortBy('date')" style="${todoSortChipStyle('date')}">Datum</button>
+      <button onclick="setTodoSortBy('category')" style="${todoSortChipStyle('category')}">Kategorie</button>
+      <button onclick="setTodoSortBy('relevance')" style="${todoSortChipStyle('relevance')}">Dringlichkeit</button>
     </div>
     <div id="todos-open-list">
-      ${open.length===0?'<div style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem;">Keine offenen To-dos.</div>':open.map(t=>todoCard(t)).join('')}
+      ${open.length===0?`<div style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem;">${emptyMsg}</div>`:open.map(t=>todoCard(t)).join('')}
     </div>
     ${done.length>0?`<div style="margin-top:1.25rem;"><div class="section-title">ERLEDIGT</div>${done.map(t=>todoCard(t)).join('')}</div>`:''}
     <div id="todo-form-modal" class="hidden"
@@ -2015,14 +2271,69 @@ function renderTodos(todos) {
       </div>
     </div>
   `;
-  setTimeout(() => { selectRelevance(selectedRelevance); selectRecurring(selectedRecurring); }, 10);
+  setTimeout(() => { selectRelevance(selectedRelevance); selectRecurring(selectedRecurring); initTodoSwipeListeners(); }, 10);
+}
+
+function extractPhoneFromDetail(detail) {
+  if (!detail) return null;
+  const firstLine = detail.split('\n')[0] || '';
+  const parts = firstLine.split('|').map(s => s.trim());
+  for (const p of parts) {
+    const digits = p.replace(/[^\d+]/g, '');
+    if (digits.length >= 8) return digits;
+  }
+  return null;
+}
+
+function initTodoSwipeListeners() {
+  document.querySelectorAll('.todo-card').forEach(el => {
+    if (el.dataset.done === '1') return;
+    let startX = 0;
+    el.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+    el.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - startX;
+      if (dx > 72) {
+        const id = parseInt(el.dataset.todoId, 10);
+        const t = _todoCache.find(x => x.id === id);
+        if (!t || t.done) return;
+        if (t.estimated_min) quickDoneTodo(id, t.estimated_min);
+        else openDoneModal(id, 0);
+      }
+    }, { passive: true });
+  });
+}
+
+async function quickDoneTodo(id, estimatedMin) {
+  await SB.from('tracker_todos').update({
+    done: true, done_at: new Date().toISOString(), actual_min: estimatedMin
+  }).eq('id', id);
+  const { data: t } = await SB.from('tracker_todos').select('*').eq('id', id).single();
+  if (t?.recurring) await spawnNextRecurringTodo(t);
+  loadTodos();
+}
+
+async function spawnNextRecurringTodo(t) {
+  const base = t.due_date || getLocalDateString();
+  const next = new Date(base + 'T12:00:00');
+  if (t.recurring === 'daily') next.setDate(next.getDate() + 1);
+  else if (t.recurring === 'weekly') next.setDate(next.getDate() + 7);
+  else if (t.recurring === 'monthly') next.setMonth(next.getMonth() + 1);
+  const { data: { user } } = await SB.auth.getUser();
+  await SB.from('tracker_todos').insert({
+    title: t.title, detail: t.detail, category: t.category, relevance: t.relevance,
+    recurring: t.recurring, estimated_min: t.estimated_min, due_time: t.due_time,
+    due_date: getLocalDateString(next), created_by: user.id,
+  });
 }
 
 function todoCard(t) {
   const cat = TODO_CATEGORIES[t.category]||TODO_CATEGORIES.andere;
   const rel = TODO_RELEVANCE[t.relevance]||TODO_RELEVANCE.medium;
   const isDone = t.done;
-  return `<div style="background:var(--surface);border:1px solid ${isDone?'var(--border)':cat.color+'44'};border-left:3px solid ${isDone?'var(--border)':cat.color};border-radius:10px;padding:0.85rem 1rem;margin-bottom:0.5rem;opacity:${isDone?'0.5':'1'};">
+  const phone = extractPhoneFromDetail(t.detail);
+  const telLink = phone && !isDone && (t.title.includes('Sales Call') || t.category === 'rais')
+    ? `<a href="tel:${phone}" onclick="event.stopPropagation()" style="font-size:0.65rem;color:var(--accent);text-decoration:none;">📞 Anrufen</a>` : '';
+  return `<div class="todo-card" data-todo-id="${t.id}" data-done="${isDone ? '1' : '0'}" style="background:var(--surface);border:1px solid ${isDone?'var(--border)':cat.color+'44'};border-left:3px solid ${isDone?'var(--border)':cat.color};border-radius:10px;padding:0.85rem 1rem;margin-bottom:0.5rem;opacity:${isDone?'0.5':'1'};">
     <div style="display:flex;align-items:flex-start;gap:0.75rem;">
       <button onclick="${isDone?'':'openDoneModal('+t.id+','+(t.estimated_min||0)+')'}" touch-action="manipulation"
         style="flex-shrink:0;width:22px;height:22px;border-radius:6px;margin-top:2px;border:2px solid ${isDone?'var(--green)':cat.color};background:${isDone?'var(--green)':'transparent'};cursor:${isDone?'default':'pointer'};display:flex;align-items:center;justify-content:center;">
@@ -2030,10 +2341,11 @@ function todoCard(t) {
       </button>
       <div style="flex:1;min-width:0;">
         <div style="font-size:0.85rem;font-weight:500;margin-bottom:0.3rem;text-decoration:${isDone?'line-through':'none'};color:${isDone?'var(--muted)':'var(--text)'};">${escapeHtml(t.title)}</div>
-        ${t.detail?`<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.35rem;">${escapeHtml(t.detail)}</div>`:''}
+        ${t.detail?`<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.35rem;white-space:pre-wrap;">${escapeHtml(t.detail)}</div>`:''}
         <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
           <span style="font-size:0.65rem;padding:0.15rem 0.45rem;border-radius:4px;background:${cat.color}22;color:${cat.color};font-weight:500;">${cat.label}</span>
           <span style="font-size:0.65rem;padding:0.15rem 0.45rem;border-radius:4px;background:${rel.color}22;color:${rel.color};">${rel.label}</span>
+          ${telLink}
           ${t.estimated_min?`<span style="font-size:0.65rem;color:var(--muted);font-family:var(--font-mono);">~${t.estimated_min}min</span>`:''}
           ${t.actual_min?`<span style="font-size:0.65rem;color:var(--green);font-family:var(--font-mono);">${t.actual_min}min real</span>`:''}
           ${t.recurring?`<span style="font-size:0.65rem;color:var(--accent);">🔁 ${{daily:'tägl.',weekly:'wöch.',monthly:'monatl.'}[t.recurring]||t.recurring}</span>`:''}
@@ -2055,8 +2367,9 @@ function todoCard(t) {
 }
 
 function todoFormHTML(editData = null) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const d = editData || {};
+  const defaultDate = d.due_date || _todoFormDefaultDate || today;
   return `
     <div style="font-size:0.7rem;letter-spacing:0.15em;color:var(--muted);margin-bottom:1.25rem;">${editData ? 'TO-DO BEARBEITEN' : 'NEUES TO-DO'}</div>
     <input type="text" id="todo-title" placeholder="Was muss erledigt werden?" value="${d.title||''}"
@@ -2081,7 +2394,7 @@ function todoFormHTML(editData = null) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.75rem;">
       <div>
         <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">DATUM (optional)</div>
-        <input type="date" id="todo-due-date" value="${d.due_date||today}" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.8rem;width:100%;outline:none;">
+        <input type="date" id="todo-due-date" value="${defaultDate}" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.8rem;width:100%;outline:none;">
       </div>
       <div>
         <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">UHRZEIT (optional)</div>
@@ -2135,6 +2448,12 @@ function openTodoForm(editData = null) {
   editingTodoId = editData ? editData.id : null;
   selectedRelevance = editData ? (editData.relevance || 'medium') : 'medium';
   selectedRecurring = editData ? (editData.recurring || '') : '';
+  if (!editData) {
+    if (todoView === 'tomorrow') _todoFormDefaultDate = addDaysToLocalDateString(1);
+    else _todoFormDefaultDate = getLocalDateString();
+  } else {
+    _todoFormDefaultDate = null;
+  }
   const modal = document.getElementById('todo-form-modal');
   modal.querySelector('div').innerHTML = todoFormHTML(editData);
   modal.classList.remove('hidden');
@@ -2142,6 +2461,7 @@ function openTodoForm(editData = null) {
 }
 function closeTodoForm() {
   editingTodoId = null;
+  _todoFormDefaultDate = null;
   document.getElementById('todo-form-modal').classList.add('hidden');
 }
 
@@ -2165,7 +2485,7 @@ async function saveTodo() {
     const { data: { user } } = await SB.auth.getUser();
     ({ error } = await SB.from('tracker_todos').insert({ ...payload, created_by: user.id }));
   }
-  if (!error) { closeTodoForm(); loadTodos(); }
+  if (!error) { closeTodoForm(); loadTodos(); updateTodoNavBadge(); }
   else console.error('Todo error:', error);
 }
 
@@ -2209,28 +2529,19 @@ async function confirmDone() {
   const actualMin = parseInt(document.getElementById('todo-actual-min')?.value);
   if (!actualMin||actualMin<1) { document.getElementById('todo-actual-min').style.borderColor='var(--red)'; return; }
   const id = pendingDoneId;
-  pendingDoneId = null; // prevent double-submit
+  pendingDoneId = null;
   await SB.from('tracker_todos').update({ done:true, done_at:new Date().toISOString(), actual_min:actualMin }).eq('id', id);
-  // auto-create next occurrence for recurring todos
   const { data: t } = await SB.from('tracker_todos').select('*').eq('id', id).single();
-  if (t?.recurring) {
-    const base = t.due_date || getLocalDateString();
-    const next = new Date(base + 'T12:00:00');
-    if (t.recurring === 'daily')   next.setDate(next.getDate() + 1);
-    else if (t.recurring === 'weekly') next.setDate(next.getDate() + 7);
-    else if (t.recurring === 'monthly') next.setMonth(next.getMonth() + 1);
-    const { data: { user } } = await SB.auth.getUser();
-    await SB.from('tracker_todos').insert({
-      title: t.title, detail: t.detail, category: t.category, relevance: t.relevance,
-      recurring: t.recurring, estimated_min: t.estimated_min, due_time: t.due_time,
-      due_date: next.toISOString().split('T')[0], created_by: user.id,
-    });
-  }
+  if (t?.recurring) await spawnNextRecurringTodo(t);
   closeDoneModal();
   loadTodos();
 }
 
-function switchTodoView(view) { todoView=view; todoSearchQuery=''; todoCategoryFilter=''; loadTodos(); }
+function switchTodoView(view) {
+  todoView = view;
+  todoSearchQuery = '';
+  loadTodos();
+}
 
 function editDWGoal() {
   const current = localStorage.getItem('dw_weekly_goal_hours') || '20';
