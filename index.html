@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    /* CSS VARIABLES */
+    /* CSS VARIABLES — RAIS floating glass design system */
     :root {
       --bg:       #0A0A0A;
       --surface:  #141618;
@@ -29,13 +29,27 @@
       --red:      #EF4444;
       --font-ui:  'Outfit', sans-serif;
       --font-mono:'Space Mono', monospace;
+      --glass-bg: rgba(20, 22, 24, 0.82);
+      --glass-bg-solid: rgba(20, 22, 24, 0.94);
+      --glass-border: rgba(255, 255, 255, 0.06);
+      --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+      --glass-shadow-sm: 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-lg: 18px;
+      --radius-pill: 999px;
+      --accent-soft: rgba(236, 106, 55, 0.14);
+      --accent-soft-border: rgba(236, 106, 55, 0.22);
+      --green-soft: rgba(120, 148, 100, 0.14);
+      --green-soft-border: rgba(120, 148, 100, 0.28);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    button { touch-action: manipulation; }
+    button { touch-action: manipulation; font-family: var(--font-ui); }
 
     body {
       background: var(--bg);
+      background-image: radial-gradient(ellipse 90% 55% at 50% -15%, rgba(236, 106, 55, 0.07), transparent 55%);
       color: var(--text);
       font-family: var(--font-ui);
       min-height: 100dvh;
@@ -68,42 +82,153 @@
       display: flex;
       flex-direction: column;
       gap: 1rem;
+      padding: 1.5rem;
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--glass-shadow);
     }
 
-    .login-form input {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
+    .login-form input,
+    .field-input,
+    .field-textarea,
+    .field-select {
+      background: rgba(10, 10, 10, 0.55);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 0.85rem;
       color: var(--text);
       font-family: var(--font-ui);
-      font-size: 1rem;
+      font-size: 0.9rem;
       width: 100%;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
-    .login-form input:focus {
-      border-color: var(--accent);
+    .login-form input { font-size: 1rem; padding: 1rem; }
+
+    .login-form input:focus,
+    .field-input:focus,
+    .field-textarea:focus,
+    .field-select:focus {
+      border-color: var(--accent-soft-border);
+      box-shadow: 0 0 0 3px rgba(236, 106, 55, 0.1);
+    }
+
+    .field-textarea { resize: vertical; min-height: 80px; }
+    .field-input-sm {
+      width: 52px;
+      padding: 0.4rem 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      text-align: center;
+      background: rgba(10, 10, 10, 0.55);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      outline: none;
     }
 
     .btn-primary {
       background: var(--accent);
       color: #000;
       border: none;
-      border-radius: 8px;
-      padding: 1rem;
+      border-radius: var(--radius-pill);
+      padding: 1rem 1.25rem;
       font-family: var(--font-ui);
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 600;
       cursor: pointer;
       width: 100%;
       letter-spacing: 0.05em;
-      transition: opacity 0.2s;
+      transition: transform 0.15s, opacity 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(236, 106, 55, 0.25);
     }
 
-    .btn-primary:hover { opacity: 0.85; }
-    .btn-primary:active { opacity: 0.7; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:active { transform: scale(0.98); opacity: 0.85; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-pill);
+      padding: 0.65rem 1.2rem;
+      color: var(--muted);
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+    .btn-secondary:hover { color: var(--text); border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.03); }
+
+    .btn-ghost {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-pill);
+      padding: 0.85rem 1rem;
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.06); }
+
+    .btn-danger {
+      background: transparent;
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      border-radius: var(--radius-pill);
+      padding: 0.85rem 1rem;
+      color: var(--red);
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.08); }
+
+    .btn-accent-sm {
+      padding: 0.28rem 0.65rem;
+      border-radius: var(--radius-pill);
+      font-size: 0.72rem;
+      cursor: pointer;
+      border: 1px solid var(--accent-soft-border);
+      background: var(--accent-soft);
+      color: var(--accent);
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    .btn-accent-sm:hover { background: rgba(236, 106, 55, 0.22); }
+
+    .btn-icon-round {
+      flex-shrink: 0;
+      padding: 0.55rem 0.75rem;
+      border-radius: var(--radius-pill);
+      font-size: 0.85rem;
+      cursor: pointer;
+      border: 1px solid var(--glass-border);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      transition: color 0.2s, background 0.2s;
+    }
+    .btn-icon-round:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+    .btn-new {
+      padding: 0.55rem 0.85rem;
+      border-radius: var(--radius-pill);
+      font-size: 0.72rem;
+      cursor: pointer;
+      border: none;
+      background: var(--accent);
+      color: #000;
+      font-weight: 600;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(236, 106, 55, 0.22);
+      transition: transform 0.15s;
+    }
+    .btn-new:active { transform: scale(0.97); }
 
     .login-error {
       color: var(--red);
@@ -120,9 +245,11 @@
     .topbar {
       position: sticky;
       top: 0;
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
-      padding: 1rem 1.25rem;
+      background: rgba(10, 10, 10, 0.78);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 0.9rem 1.25rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -146,40 +273,43 @@
     }
 
     .btn-logout {
-      background: none;
-      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--glass-border);
       color: var(--muted);
-      border-radius: 6px;
-      padding: 0.4rem 0.75rem;
-      font-size: 0.8rem;
+      border-radius: var(--radius-pill);
+      padding: 0.4rem 0.85rem;
+      font-size: 0.78rem;
       cursor: pointer;
       font-family: var(--font-ui);
-      transition: color 0.2s, border-color 0.2s;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
     }
-    .btn-logout:hover { color: var(--text); border-color: var(--text); }
+    .btn-logout:hover { color: var(--text); border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); }
 
     .topbar-actions { display: flex; align-items: center; gap: 0.5rem; }
 
     .btn-icon {
-      background: none;
-      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--glass-border);
       color: var(--muted);
-      border-radius: 6px;
-      padding: 0.4rem 0.6rem;
+      border-radius: var(--radius-pill);
+      padding: 0.4rem 0.65rem;
       font-size: 1rem;
       cursor: pointer;
       font-family: var(--font-ui);
       line-height: 1;
       touch-action: manipulation;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
     }
-    .btn-icon:hover { color: var(--text); border-color: var(--text); }
+    .btn-icon:hover { color: var(--text); border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); }
 
     #settings-overlay {
       display: none;
       position: fixed;
       inset: 0;
       z-index: 250;
-      background: var(--bg);
+      background: rgba(10, 10, 10, 0.96);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       max-width: 480px;
       margin: 0 auto;
       left: 0;
@@ -196,9 +326,11 @@
       transform: translateX(-50%) translateY(0.75rem);
       max-width: 420px;
       width: calc(100% - 2rem);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
+      background: var(--glass-bg-solid);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
       padding: 0.85rem 1rem;
       font-size: 0.85rem;
       z-index: 400;
@@ -206,7 +338,7 @@
       visibility: hidden;
       pointer-events: none;
       transition: transform 0.25s ease, opacity 0.25s ease, visibility 0.25s ease;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      box-shadow: var(--glass-shadow);
     }
     #toast.visible {
       transform: translateX(-50%) translateY(0);
@@ -216,8 +348,6 @@
     }
 
     .nav-item { font-size: 0.48rem; }
-    .todo-card { touch-action: pan-y; transition: transform 0.15s; }
-    .todo-card.swipe-hint { transform: translateX(4px); }
 
     /* ── SESSION BANNER ── */
     #session-banner {
@@ -231,6 +361,9 @@
       font-weight: 600;
       letter-spacing: 0.05em;
       cursor: pointer;
+      margin: 0.5rem 0.65rem 0;
+      border-radius: var(--radius-pill);
+      box-shadow: 0 4px 20px rgba(236, 106, 55, 0.3);
     }
     #session-banner.visible { display: flex; }
     #session-banner-time { font-family: var(--font-mono); font-size: 0.85rem; }
@@ -385,19 +518,400 @@
 
     /* ── SHARED COMPONENTS ── */
     .section-title {
-      font-size: 0.7rem;
-      letter-spacing: 0.15em;
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
       color: var(--muted);
       text-transform: uppercase;
-      margin-bottom: 1rem;
+      margin-bottom: 0.85rem;
     }
 
     .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.25rem;
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 1.15rem 1.2rem;
       margin-bottom: 0.75rem;
+      box-shadow: var(--glass-shadow-sm);
+    }
+
+    .card-compact { padding: 0.85rem 1rem; }
+    .card-flush { margin-bottom: 0; }
+
+    .glass-panel {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--glass-shadow-sm);
+    }
+
+    .hub-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.15rem;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+      font-family: var(--font-ui);
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+      box-shadow: var(--glass-shadow-sm);
+    }
+    .hub-btn:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+    .hub-btn:active { transform: scale(0.99); }
+
+    .segmented {
+      display: flex;
+      gap: 0.25rem;
+      padding: 0.25rem;
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-pill);
+      margin-bottom: 0.75rem;
+      box-shadow: var(--glass-shadow-sm);
+    }
+
+    .segmented-btn {
+      flex: 1;
+      padding: 0.55rem 0.35rem;
+      border-radius: var(--radius-pill);
+      font-family: var(--font-ui);
+      font-size: 0.72rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    .segmented .btn-new { flex: 0 0 auto; }
+    .segmented .btn-icon-round { flex: 0 0 auto; }
+
+    .segmented-btn.active {
+      background: var(--accent-soft);
+      border-color: var(--accent-soft-border);
+      color: var(--accent);
+      box-shadow: 0 0 16px rgba(236, 106, 55, 0.1);
+    }
+
+    .chip {
+      flex-shrink: 0;
+      padding: 0.32rem 0.7rem;
+      border-radius: var(--radius-pill);
+      font-family: var(--font-ui);
+      font-size: 0.72rem;
+      cursor: pointer;
+      white-space: nowrap;
+      border: 1px solid var(--glass-border);
+      background: transparent;
+      color: var(--muted);
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .chip.active {
+      border-color: var(--chip-color, var(--accent-soft-border));
+      background: color-mix(in srgb, var(--chip-color, var(--accent)) 14%, transparent);
+      color: var(--chip-color, var(--accent));
+    }
+
+    .chip-row {
+      display: flex;
+      gap: 0.35rem;
+      overflow-x: auto;
+      padding-bottom: 0.35rem;
+      margin-bottom: 0.5rem;
+      scrollbar-width: none;
+    }
+
+    .filter-toggle {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.55rem 0.75rem;
+      margin-bottom: 0.5rem;
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      color: var(--muted);
+      font-family: var(--font-ui);
+      font-size: 0.75rem;
+      cursor: pointer;
+      box-shadow: var(--glass-shadow-sm);
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .filter-toggle:hover { background: rgba(255,255,255,0.05); }
+
+    .progress-track {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-pill);
+      height: 6px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: var(--radius-pill);
+      transition: width 0.3s ease;
+    }
+
+    .stat-tag {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+    }
+
+    .content-format-btn {
+      padding: 0.85rem 0.5rem;
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      font-family: var(--font-ui);
+      font-size: 0.82rem;
+      cursor: pointer;
+      touch-action: manipulation;
+      text-align: center;
+      line-height: 1.4;
+      transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    .content-format-btn.selected {
+      border-color: var(--accent-soft-border);
+      color: var(--accent);
+      background: var(--accent-soft);
+      box-shadow: 0 0 16px rgba(236, 106, 55, 0.1);
+    }
+
+    .muscle-btn {
+      padding: 0.75rem 0.5rem;
+      background: rgba(10, 10, 10, 0.4);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      font-family: var(--font-ui);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .muscle-btn.selected {
+      border-color: var(--green-soft-border);
+      color: var(--green);
+      background: var(--green-soft);
+      box-shadow: 0 0 16px rgba(120, 148, 100, 0.12);
+    }
+
+    .rel-btn, .rec-btn {
+      flex: 1;
+      padding: 0.65rem 0.5rem;
+      border-radius: var(--radius-pill);
+      font-family: var(--font-ui);
+      font-size: 0.8rem;
+      cursor: pointer;
+      border: 1px solid var(--glass-border);
+      background: transparent;
+      color: var(--muted);
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .rel-btn.selected, .rec-btn.selected {
+      border-color: var(--chip-color, var(--accent-soft-border));
+      background: color-mix(in srgb, var(--chip-color, var(--accent)) 14%, transparent);
+      color: var(--chip-color, var(--accent));
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 300;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-overlay.center { align-items: center; padding: 1.5rem; }
+
+    .modal-sheet {
+      background: var(--glass-bg-solid);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      padding: 1.75rem 1.5rem;
+      width: 100%;
+      max-width: 480px;
+      border-top: 1px solid var(--glass-border);
+      max-height: 92dvh;
+      overflow-y: auto;
+      box-shadow: var(--glass-shadow);
+    }
+    .modal-sheet.rounded {
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--glass-border);
+      max-width: 360px;
+    }
+
+    .modal-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+    }
+
+    .field-label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.9rem 0;
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .setting-row:last-child { border-bottom: none; }
+
+    .link-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 0;
+      border-bottom: 1px solid var(--glass-border);
+      text-decoration: none;
+      color: var(--text);
+      transition: color 0.2s;
+    }
+    .link-row:last-child { border-bottom: none; }
+    .link-row:hover { color: var(--accent); }
+
+    .toggle {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 24px;
+      cursor: pointer;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.08);
+      border-radius: var(--radius-pill);
+      transition: background 0.2s;
+      border: 1px solid var(--glass-border);
+    }
+    .toggle input:checked + .toggle-track { background: var(--accent); border-color: var(--accent); }
+    .toggle-thumb {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      transition: left 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+    .toggle input:checked ~ .toggle-thumb { left: 21px; }
+
+    .todo-card {
+      touch-action: pan-y;
+      transition: transform 0.15s;
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+      margin-bottom: 0.5rem;
+      box-shadow: var(--glass-shadow-sm);
+    }
+    .todo-card.swipe-hint { transform: translateX(4px); }
+    .todo-card.done { opacity: 0.5; }
+
+    .todo-check {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      margin-top: 2px;
+      border: 2px solid var(--todo-accent, var(--accent));
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    .todo-check.checked {
+      background: var(--green);
+      border-color: var(--green);
+      cursor: default;
+    }
+
+    .meta-tag {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-pill);
+      font-weight: 500;
+      border: 1px solid transparent;
+    }
+
+    .empty-state {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .action-row {
+      margin-top: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .action-row .btn-secondary { width: 100%; max-width: 280px; text-align: center; }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.5rem;
+      text-align: center;
+    }
+
+    .stat-mono {
+      font-family: var(--font-mono);
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+    }
+
+    .divider-v {
+      width: 1px;
+      background: var(--glass-border);
+      align-self: stretch;
     }
 
     .hidden { display: none !important; }
@@ -444,13 +958,9 @@
       <div id="dw-idle" class="dw-state">
         <div class="section-title">Deep Work Session</div>
         <div class="card" style="padding: 1.5rem 1.25rem;">
-          <input type="text" id="dw-label-start-input" placeholder="Was arbeitest du? (optional)"
-            style="background:var(--bg); border:1px solid var(--border); border-radius:8px;
-                   padding:0.75rem; color:var(--text); font-family:var(--font-ui);
-                   font-size:0.9rem; width:100%; margin-bottom:1rem; outline:none; display:block;">
-          <button class="btn-primary" onclick="dwStart()" style="max-width:100%;">
-            ▶ SESSION STARTEN
-          </button>
+          <input type="text" id="dw-label-start-input" class="field-input" placeholder="Was arbeitest du? (optional)"
+            style="margin-bottom:1rem; display:block;">
+          <button class="btn-primary" onclick="dwStart()">▶ SESSION STARTEN</button>
         </div>
         <div class="section-title" style="margin-top:1.5rem;">HEUTE</div>
         <div id="dw-today-list"></div>
@@ -479,51 +989,22 @@
           </div>
           <div id="dw-label-display" style="text-align:center; font-size:0.8rem; color:var(--muted); margin-bottom:1rem; min-height:1.2rem;"></div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
-            <button id="dw-pause-btn" onclick="dwTogglePause()"
-              style="background:var(--surface); border:1px solid var(--border); border-radius:8px;
-                     padding:1rem; color:var(--text); font-family:var(--font-ui); font-size:0.9rem;
-                     cursor:pointer; font-weight:500; touch-action:manipulation;">
-              ⏸ PAUSE
-            </button>
-            <button onclick="dwEnd()"
-              style="background:transparent; border:1px solid var(--red); border-radius:8px;
-                     padding:1rem; color:var(--red); font-family:var(--font-ui); font-size:0.9rem;
-                     cursor:pointer; font-weight:500; touch-action:manipulation;">
-              ⏹ BEENDEN
-            </button>
+            <button id="dw-pause-btn" class="btn-ghost" onclick="dwTogglePause()">⏸ PAUSE</button>
+            <button class="btn-danger" onclick="dwEnd()">⏹ BEENDEN</button>
           </div>
         </div>
       </div>
 
       <!-- SUMMARY MODAL -->
-      <div id="dw-summary-modal" class="hidden"
-        style="position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:300;
-               display:flex; align-items:flex-end; justify-content:center;">
-        <div style="background:var(--surface); border-radius:16px 16px 0 0; padding:2rem;
-                    width:100%; max-width:480px; border-top:1px solid var(--border);
-                    max-height:92dvh; overflow-y:auto;">
-          <div style="font-size:0.7rem; letter-spacing:0.2em; color:var(--muted); margin-bottom:1.5rem;">
-            SESSION ZUSAMMENFASSUNG
-          </div>
+      <div id="dw-summary-modal" class="hidden modal-overlay">
+        <div class="modal-sheet">
+          <div class="modal-label">SESSION ZUSAMMENFASSUNG</div>
           <div id="dw-summary-content" style="margin-bottom:1.25rem;"></div>
-          <textarea id="dw-session-notes" placeholder="Was habe ich erarbeitet?"
-            style="width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px;
-                   padding:0.75rem; color:var(--text); font-family:var(--font-ui); font-size:0.9rem;
-                   resize:vertical; min-height:120px; outline:none; margin-bottom:1rem;
-                   transition:border-color 0.2s;"
-            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+          <textarea id="dw-session-notes" class="field-textarea" placeholder="Was habe ich erarbeitet?"
+            style="min-height:120px; margin-bottom:1rem;"></textarea>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
-            <button onclick="dwDiscard()"
-              style="background:transparent; border:1px solid var(--border); border-radius:8px;
-                     padding:1rem; color:var(--muted); font-family:var(--font-ui); cursor:pointer;">
-              Verwerfen
-            </button>
-            <button onclick="dwSave()"
-              style="background:var(--accent); border:none; border-radius:8px;
-                     padding:1rem; color:#000; font-family:var(--font-ui);
-                     font-weight:600; cursor:pointer;">
-              Speichern
-            </button>
+            <button class="btn-secondary" onclick="dwDiscard()">Verwerfen</button>
+            <button class="btn-primary" onclick="dwSave()">Speichern</button>
           </div>
         </div>
       </div>
@@ -536,7 +1017,7 @@
         <div id="tr-muscle-picker" class="card">
           <div style="font-size:0.75rem; color:var(--muted); margin-bottom:1rem; letter-spacing:0.1em;">MUSKELGRUPPE WÄHLEN</div>
           <div id="tr-muscle-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:1rem;"></div>
-          <button class="btn-primary" onclick="trStart()" id="tr-start-btn" disabled style="opacity:0.4; cursor:not-allowed;">
+          <button class="btn-primary" onclick="trStart()" id="tr-start-btn" disabled>
             ▶ TRAINING STARTEN
           </button>
         </div>
@@ -564,46 +1045,22 @@
           </div>
           <div id="tr-status-indicator" style="text-align:center; font-size:0.75rem; letter-spacing:0.15em; color:var(--green); margin-bottom:1.5rem;">● TRAINING AKTIV</div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
-            <button id="tr-pause-btn" onclick="trTogglePause()"
-              style="background:var(--surface); border:1px solid var(--border); border-radius:8px;
-                     padding:1rem; color:var(--text); font-family:var(--font-ui); font-size:0.9rem; cursor:pointer;">
-              ⏸ PAUSE
-            </button>
-            <button onclick="trEnd()"
-              style="background:transparent; border:1px solid var(--red); border-radius:8px;
-                     padding:1rem; color:var(--red); font-family:var(--font-ui); font-size:0.9rem; cursor:pointer;">
-              ⏹ FERTIG
-            </button>
+            <button id="tr-pause-btn" class="btn-ghost" onclick="trTogglePause()">⏸ PAUSE</button>
+            <button class="btn-danger" onclick="trEnd()">⏹ FERTIG</button>
           </div>
         </div>
       </div>
 
       <!-- SUMMARY MODAL -->
-      <div id="tr-summary-modal" class="hidden"
-        style="position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:300;
-               display:flex; align-items:flex-end; justify-content:center;">
-        <div style="background:var(--surface); border-radius:16px 16px 0 0; padding:2rem;
-                    width:100%; max-width:480px; border-top:1px solid var(--border);
-                    max-height:92dvh; overflow-y:auto;">
-          <div style="font-size:0.7rem; letter-spacing:0.2em; color:var(--muted); margin-bottom:1.5rem;">TRAINING ZUSAMMENFASSUNG</div>
+      <div id="tr-summary-modal" class="hidden modal-overlay">
+        <div class="modal-sheet">
+          <div class="modal-label">TRAINING ZUSAMMENFASSUNG</div>
           <div id="tr-summary-content" style="margin-bottom:1.25rem;"></div>
-          <textarea id="tr-session-notes" placeholder="Trainingsnotizen..."
-            style="width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px;
-                   padding:0.75rem; color:var(--text); font-family:var(--font-ui); font-size:0.9rem;
-                   resize:vertical; min-height:120px; outline:none; margin-bottom:1rem;
-                   transition:border-color 0.2s;"
-            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+          <textarea id="tr-session-notes" class="field-textarea" placeholder="Trainingsnotizen..."
+            style="min-height:120px; margin-bottom:1rem;"></textarea>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
-            <button onclick="trDiscard()"
-              style="background:transparent; border:1px solid var(--border); border-radius:8px;
-                     padding:1rem; color:var(--muted); font-family:var(--font-ui); cursor:pointer;">
-              Verwerfen
-            </button>
-            <button onclick="trSave()"
-              style="background:var(--green); border:none; border-radius:8px;
-                     padding:1rem; color:#000; font-family:var(--font-ui); font-weight:600; cursor:pointer;">
-              Speichern
-            </button>
+            <button class="btn-secondary" onclick="trDiscard()">Verwerfen</button>
+            <button class="btn-primary" onclick="trSave()" style="background:var(--green); box-shadow:0 4px 20px rgba(120,148,100,0.25);">Speichern</button>
           </div>
         </div>
       </div>
@@ -681,58 +1138,32 @@
     </div>
     <div class="tab-content" style="padding-bottom:2rem;">
       <div id="settings-menu" style="padding:0 0.25rem;">
-        <button type="button" onclick="openSettingsSection('app')"
-          style="display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.15rem;margin-bottom:0.5rem;color:var(--text);font-family:var(--font-ui);font-size:0.95rem;cursor:pointer;">
-          ⚙️ App-Einstellungen</button>
-        <button type="button" onclick="openSettingsSection('content')"
-          style="display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.15rem;margin-bottom:0.5rem;color:var(--text);font-family:var(--font-ui);font-size:0.95rem;cursor:pointer;">
-          🎬 Content-Log</button>
-        <button type="button" onclick="openSettingsSection('chat')"
-          style="display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.15rem;margin-bottom:0.5rem;color:var(--text);font-family:var(--font-ui);font-size:0.95rem;cursor:pointer;">
-          💬 Chat Agent</button>
+        <button type="button" class="hub-btn" onclick="openSettingsSection('app')">⚙️ App-Einstellungen</button>
+        <button type="button" class="hub-btn" onclick="openSettingsSection('content')">🎬 Content-Log</button>
+        <button type="button" class="hub-btn" onclick="openSettingsSection('chat')">💬 Chat Agent</button>
       </div>
       <div class="tab-panel hidden" id="tab-settings"></div>
       <div class="tab-panel hidden" id="tab-content">
         <div class="section-title">Content veröffentlicht</div>
         <div class="card" style="margin-bottom:1.25rem;">
-          <div style="font-size:0.7rem; color:var(--muted); letter-spacing:0.12em; margin-bottom:0.75rem;">FORMAT</div>
+          <div class="field-label" style="margin-bottom:0.75rem;">FORMAT</div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:1rem;">
-            <button class="content-format-btn" id="cfmt-lfc" onclick="selectContentFormat('lfc')"
-              style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
-                     border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
-                     cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
+            <button class="content-format-btn" id="cfmt-lfc" onclick="selectContentFormat('lfc')">
               🎙<br><strong style="font-size:0.9rem;">LFC</strong><br><span style="font-size:0.68rem;">Long Form</span>
             </button>
-            <button class="content-format-btn" id="cfmt-sfc" onclick="selectContentFormat('sfc')"
-              style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
-                     border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
-                     cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
+            <button class="content-format-btn" id="cfmt-sfc" onclick="selectContentFormat('sfc')">
               ⚡<br><strong style="font-size:0.9rem;">SFC</strong><br><span style="font-size:0.68rem;">Short Form</span>
             </button>
-            <button class="content-format-btn" id="cfmt-artikel" onclick="selectContentFormat('artikel')"
-              style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
-                     border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
-                     cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
+            <button class="content-format-btn" id="cfmt-artikel" onclick="selectContentFormat('artikel')">
               ✍️<br><strong style="font-size:0.9rem;">Artikel</strong><br><span style="font-size:0.68rem;">Fundament</span>
             </button>
-            <button class="content-format-btn" id="cfmt-post" onclick="selectContentFormat('post')"
-              style="padding:0.85rem 0.5rem; background:transparent; border:1px solid var(--border);
-                     border-radius:8px; color:var(--muted); font-family:var(--font-ui); font-size:0.82rem;
-                     cursor:pointer; touch-action:manipulation; text-align:center; line-height:1.4;">
+            <button class="content-format-btn" id="cfmt-post" onclick="selectContentFormat('post')">
               📸<br><strong style="font-size:0.9rem;">Post</strong><br><span style="font-size:0.68rem;">Instagram</span>
             </button>
           </div>
           <div id="content-platform-info" style="font-size:0.72rem; color:var(--muted); margin-bottom:1rem; min-height:1.2rem; letter-spacing:0.02em;"></div>
-          <input type="text" id="content-title-input" placeholder="Titel (optional)"
-            style="background:var(--bg); border:1px solid var(--border); border-radius:8px;
-                   padding:0.75rem; color:var(--text); font-family:var(--font-ui);
-                   font-size:0.9rem; width:100%; margin-bottom:1rem; outline:none;">
-          <button id="content-save-btn" onclick="saveContent()" disabled
-            style="width:100%; background:var(--accent); border:none; border-radius:8px;
-                   padding:1rem; color:#000; font-family:var(--font-ui); font-weight:600;
-                   font-size:0.95rem; cursor:not-allowed; opacity:0.4; touch-action:manipulation;">
-            + Speichern
-          </button>
+          <input type="text" id="content-title-input" class="field-input" placeholder="Titel (optional)" style="margin-bottom:1rem;">
+          <button id="content-save-btn" class="btn-primary" onclick="saveContent()" disabled>+ Speichern</button>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
           <div class="section-title" style="margin-bottom:0;">DIESE WOCHE</div>
@@ -1006,20 +1437,11 @@ let contentFormat = null;
 
 function selectContentFormat(fmt) {
   contentFormat = fmt;
-  document.querySelectorAll('.content-format-btn').forEach(b => {
-    b.style.borderColor = 'var(--border)';
-    b.style.color = 'var(--muted)';
-    b.style.background = 'transparent';
-  });
-  const btn = document.getElementById('cfmt-' + fmt);
-  btn.style.borderColor = 'var(--accent)';
-  btn.style.color = 'var(--accent)';
-  btn.style.background = 'rgba(236,106,55,0.12)';
+  document.querySelectorAll('.content-format-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('cfmt-' + fmt)?.classList.add('selected');
   document.getElementById('content-platform-info').textContent = CONTENT_FORMATS[fmt].platforms;
   const saveBtn = document.getElementById('content-save-btn');
   saveBtn.disabled = false;
-  saveBtn.style.opacity = '1';
-  saveBtn.style.cursor = 'pointer';
 }
 
 async function saveContent() {
@@ -1040,13 +1462,7 @@ async function saveContent() {
     document.getElementById('content-platform-info').textContent = '';
     const saveBtn = document.getElementById('content-save-btn');
     saveBtn.disabled = true;
-    saveBtn.style.opacity = '0.4';
-    saveBtn.style.cursor = 'not-allowed';
-    document.querySelectorAll('.content-format-btn').forEach(b => {
-      b.style.borderColor = 'var(--border)';
-      b.style.color = 'var(--muted)';
-      b.style.background = 'transparent';
-    });
+    document.querySelectorAll('.content-format-btn').forEach(b => b.classList.remove('selected'));
     loadContentLog();
     loadOverview();
   } else {
@@ -1366,30 +1782,16 @@ function initMusclePicker() {
   const grid = document.getElementById('tr-muscle-grid');
   if (!grid) return;
   grid.innerHTML = MUSCLE_GROUPS.map(m => `
-    <button onclick="selectMuscle('${m}')" id="muscle-${m}"
-      style="padding:0.75rem 0.5rem; background:var(--bg); border:1px solid var(--border);
-             border-radius:8px; color:var(--muted); font-family:var(--font-ui);
-             font-size:0.85rem; cursor:pointer; transition:all 0.15s;">
-      ${m}
-    </button>
+    <button onclick="selectMuscle('${m}')" id="muscle-${m}" class="muscle-btn">${m}</button>
   `).join('');
 }
 
 function selectMuscle(m) {
   trSelectedMuscle = m;
-  document.querySelectorAll('[id^="muscle-"]').forEach(b => {
-    b.style.borderColor = 'var(--border)';
-    b.style.color = 'var(--muted)';
-    b.style.background = 'var(--bg)';
-  });
-  const btn = document.getElementById('muscle-' + m);
-  btn.style.borderColor = 'var(--green)';
-  btn.style.color = 'var(--green)';
-  btn.style.background = 'rgba(120,148,100,0.12)';
+  document.querySelectorAll('.muscle-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('muscle-' + m)?.classList.add('selected');
   const startBtn = document.getElementById('tr-start-btn');
   startBtn.disabled = false;
-  startBtn.style.opacity = '1';
-  startBtn.style.cursor = 'pointer';
 }
 
 // ── OUTREACH ──
@@ -1470,47 +1872,39 @@ function renderOutreach(sessions, events, period) {
   const outreachBarColor = outreachPct >= 100 ? 'var(--green)' : outreachPct >= 50 ? 'var(--yellow)' : 'var(--red)';
 
   document.getElementById('tab-outreach').innerHTML = `
-    <div style="display:flex; gap:0.5rem; margin-bottom:1.25rem; align-items:center;">
+    <div class="segmented" style="margin-bottom:1.25rem; align-items:center;">
       ${tabs.map(t => `
-        <button onclick="loadOutreach('${t}')"
-          style="flex:1; padding:0.6rem; border-radius:8px; font-family:var(--font-ui);
-                 font-size:0.8rem; cursor:pointer;
-                 border:1px solid ${t === period ? 'var(--accent)' : 'var(--border)'};
-                 background:${t === period ? 'rgba(236,106,55,0.12)' : 'transparent'};
-                 color:${t === period ? 'var(--accent)' : 'var(--muted)'};">
+        <button onclick="loadOutreach('${t}')" class="segmented-btn${t === period ? ' active' : ''}">
           ${tabLabels[t]}
         </button>
       `).join('')}
-      <button onclick="loadOutreach('${period}')"
-        style="flex-shrink:0; padding:0.6rem 0.75rem; border-radius:8px; font-family:var(--font-ui);
-               font-size:0.85rem; cursor:pointer; border:1px solid var(--border);
-               background:transparent; color:var(--muted);" title="Aktualisieren">↻</button>
+      <button onclick="loadOutreach('${period}')" class="btn-icon-round" style="flex-shrink:0;" title="Aktualisieren">↻</button>
     </div>
     ${period === 'today' ? `
-    <div class="card" style="margin-bottom:0.75rem; padding:0.85rem 1rem;">
+    <div class="card card-compact" style="margin-bottom:0.75rem;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
-        <span style="font-size:0.65rem; letter-spacing:0.1em; color:var(--muted);">TAGESZIEL</span>
+        <span class="stat-label" style="margin-bottom:0;">TAGESZIEL</span>
         <span style="font-size:0.75rem; color:var(--muted);">${totalPlayed} / ${outreachGoal} Leads
           <button onclick="editOutreachGoal()" style="background:none; border:none; cursor:pointer; color:var(--muted); padding:0 0.2rem; font-size:0.8rem;">✏️</button>
         </span>
       </div>
-      <div style="background:var(--border); border-radius:4px; height:5px; overflow:hidden;">
-        <div style="width:${outreachPct}%; background:${outreachBarColor}; height:100%; border-radius:4px; transition:width 0.3s;"></div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width:${outreachPct}%; background:${outreachBarColor};"></div>
       </div>
     </div>` : ''}
     <div class="card" style="margin-bottom:0.75rem;">
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem; text-align:center; margin-bottom:1rem;">
+      <div class="stat-grid" style="margin-bottom:1rem;">
         <div>
-          <div style="font-size:0.6rem; color:var(--muted); letter-spacing:0.1em; margin-bottom:0.25rem;">SESSIONS</div>
-          <div style="font-family:var(--font-mono); font-size:1.5rem;">${sessions.length}</div>
+          <div class="stat-label">SESSIONS</div>
+          <div class="stat-mono">${sessions.length}</div>
         </div>
         <div>
-          <div style="font-size:0.6rem; color:var(--muted); letter-spacing:0.1em; margin-bottom:0.25rem;">GESPIELT</div>
-          <div style="font-family:var(--font-mono); font-size:1.5rem;">${totalPlayed}</div>
+          <div class="stat-label">GESPIELT</div>
+          <div class="stat-mono">${totalPlayed}</div>
         </div>
         <div>
-          <div style="font-size:0.6rem; color:var(--muted); letter-spacing:0.1em; margin-bottom:0.25rem;">CONV %</div>
-          <div style="font-family:var(--font-mono); font-size:1.5rem; color:${wins > 0 ? 'var(--green)' : 'var(--muted)'};">${convRate}%</div>
+          <div class="stat-label">CONV %</div>
+          <div class="stat-mono" style="color:${wins > 0 ? 'var(--green)' : 'var(--muted)'};">${convRate}%</div>
         </div>
       </div>
       <div style="display:flex; flex-direction:column; gap:0.5rem;">
@@ -1522,37 +1916,33 @@ function renderOutreach(sessions, events, period) {
     </div>
     <div class="section-title">SESSIONS</div>
     ${sessions.length === 0
-      ? '<div style="color:var(--muted); font-size:0.85rem;">Keine Sessions in diesem Zeitraum.</div>'
+      ? '<div class="empty-state">Keine Sessions in diesem Zeitraum.</div>'
       : sessions.map(s => {
           const sb = s.status_breakdown || {};
           const sEvents = eventsBySession[s.id] || [];
           const demoEvents = sEvents.filter(e => ['demo_termin','demo','closing'].includes(e.status_to));
           return `
-            <div class="card" style="padding:0.85rem 1rem;">
+            <div class="card card-compact">
               <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
                 <div style="font-size:0.85rem;">${new Date(s.started_at).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</div>
                 <div style="font-size:0.85rem; font-family:var(--font-mono);">${s.leads_played} Leads</div>
               </div>
               <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:${demoEvents.length>0?'0.75rem':'0'};">
                 ${Object.entries(sb).map(([status, count]) => `
-                  <span style="font-size:0.7rem; padding:0.2rem 0.5rem; border-radius:4px;
-                               background:rgba(255,255,255,0.05); color:${getStatusColor(status)};">
+                  <span class="stat-tag" style="color:${getStatusColor(status)};">
                     ${count}× ${STATUS_AMPEL[status]?.label || status}
                   </span>
                 `).join('')}
               </div>
               ${demoEvents.length > 0 ? `
-                <div style="border-top:1px solid var(--border); padding-top:0.6rem; display:flex; flex-direction:column; gap:0.4rem;">
+                <div style="border-top:1px solid var(--glass-border); padding-top:0.6rem; display:flex; flex-direction:column; gap:0.4rem;">
                   ${demoEvents.map(ev => `
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                       <div>
                         <span style="font-size:0.72rem; color:${getStatusColor(ev.status_to)}; margin-right:0.4rem;">${STATUS_AMPEL[ev.status_to]?.label || ev.status_to}</span>
                         <span style="font-size:0.78rem; color:var(--text);">${escapeHtml(ev.contact_name || '—')}</span>
                       </div>
-                      <button onclick="openCrmTodoPopup('${ev.contact_id}','${escapeHtml(ev.contact_name||'')}')"
-                        style="padding:0.25rem 0.6rem; border-radius:6px; font-family:var(--font-ui); font-size:0.7rem;
-                               cursor:pointer; border:1px solid var(--accent); background:rgba(236,106,55,0.12);
-                               color:var(--accent); white-space:nowrap;">+ Todo</button>
+                      <button onclick="openCrmTodoPopup('${ev.contact_id}','${escapeHtml(ev.contact_name||'')}')" class="btn-accent-sm">+ Todo</button>
                     </div>
                   `).join('')}
                 </div>
@@ -2116,8 +2506,8 @@ async function loadOverview() {
             ${formatTime(dwWeekTotal)} / <span id="dw-goal-display" style="cursor:pointer;" onclick="editDWGoal()">${dwWeekGoalHours}h ✏️</span>
           </span>
         </div>
-        <div style="background:var(--border); border-radius:4px; height:6px; overflow:hidden;">
-          <div style="background:var(--accent); height:100%; width:${dwWeekPct}%; border-radius:4px; transition:width 0.3s;"></div>
+        <div class="progress-track">
+          <div class="progress-fill" style="background:var(--accent); width:${dwWeekPct}%;"></div>
         </div>
       </div>
     </div>
@@ -2125,9 +2515,9 @@ async function loadOverview() {
       <div class="section-title">EFFIZIENZ</div>
       <div style="display:flex; gap:0.25rem; align-items:flex-start;">
         ${effCol('Heute', effHeute)}
-        <div style="width:1px; background:var(--border); align-self:stretch;"></div>
+        <div class="divider-v"></div>
         ${effCol('Woche', effWoche)}
-        <div style="width:1px; background:var(--border); align-self:stretch;"></div>
+        <div class="divider-v"></div>
         ${effCol('Monat', effMonat)}
       </div>
     </div>
@@ -2141,8 +2531,8 @@ async function loadOverview() {
         <span>OUTREACH TAGESZIEL</span>
         <span style="font-family:var(--font-mono);">${callsTodayPlayed} / ${orGoal}</span>
       </div>
-      <div style="background:var(--border); border-radius:4px; height:6px; overflow:hidden;">
-        <div style="background:var(--text); height:100%; width:${orPct}%; border-radius:4px; transition:width 0.3s;"></div>
+      <div class="progress-track">
+        <div class="progress-fill" style="background:var(--text); width:${orPct}%;"></div>
       </div>
     </div>
     <div class="card">
@@ -2179,19 +2569,9 @@ async function loadOverview() {
       </div>
       <div style="font-size:0.82rem; color:var(--text); line-height:1.5;">${escapeHtml(lastNote.notes)}</div>
     </div>` : ''}
-    <div style="margin-top:0.75rem; display:flex; flex-direction:column; gap:0.5rem; align-items:center;">
-      <button onclick="switchTab('todos'); switchTodoView('tomorrow')"
-        style="background:transparent; border:1px solid var(--border); border-radius:8px;
-               padding:0.6rem 1.2rem; color:var(--muted); font-family:var(--font-ui);
-               font-size:0.8rem; cursor:pointer; touch-action:manipulation; width:100%; max-width:280px;">
-        📅 Morgen planen
-      </button>
-      <button id="week-report-btn" onclick="copyWeekReport()"
-        style="background:transparent; border:1px solid var(--border); border-radius:8px;
-               padding:0.6rem 1.2rem; color:var(--muted); font-family:var(--font-ui);
-               font-size:0.8rem; cursor:pointer; touch-action:manipulation; width:100%; max-width:280px;">
-        📋 Woche kopieren
-      </button>
+    <div class="action-row">
+      <button class="btn-secondary" onclick="switchTab('todos'); switchTodoView('tomorrow')">📅 Morgen planen</button>
+      <button class="btn-secondary" id="week-report-btn" onclick="copyWeekReport()">📋 Woche kopieren</button>
     </div>
   `;
 }
@@ -2323,19 +2703,12 @@ function sortTodoList(items, sortBy, isDone) {
   return list;
 }
 
-function todoViewBtnStyle(view) {
-  const active = todoView === view;
-  return `flex:1;padding:0.55rem 0.35rem;border-radius:8px;font-family:var(--font-ui);font-size:0.72rem;cursor:pointer;
-    border:1px solid ${active ? 'var(--accent)' : 'var(--border)'};
-    background:${active ? 'rgba(236,106,55,0.1)' : 'transparent'};
-    color:${active ? 'var(--accent)' : 'var(--muted)'};`;
+function todoViewBtnClass(view) {
+  return `segmented-btn${todoView === view ? ' active' : ''}`;
 }
 
-function todoFilterPillStyle(active, color) {
-  return `flex-shrink:0;padding:0.3rem 0.65rem;border-radius:20px;font-family:var(--font-ui);font-size:0.72rem;cursor:pointer;white-space:nowrap;
-    border:1px solid ${active ? (color || 'var(--accent)') : 'var(--border)'};
-    background:${active ? (color ? color + '22' : 'rgba(236,106,55,0.15)') : 'transparent'};
-    color:${active ? (color || 'var(--accent)') : 'var(--muted)'};`;
+function todoChipAttrs(active, color) {
+  return `class="chip${active ? ' active' : ''}"${color ? ` style="--chip-color:${color}"` : ''}`;
 }
 
 async function loadTodos() {
@@ -2407,44 +2780,35 @@ function renderTodos(todos) {
   const filterBadge = filterCount > 0 ? `<span style="color:var(--accent);font-family:var(--font-mono);"> · ${filterCount}</span>` : '';
 
   document.getElementById('tab-todos').innerHTML = `
-    <div style="display:flex;gap:0.35rem;margin-bottom:0.5rem;align-items:stretch;">
-      <button onclick="switchTodoView('today')" style="${todoViewBtnStyle('today')}">Heute</button>
-      <button onclick="switchTodoView('tomorrow')" style="${todoViewBtnStyle('tomorrow')}">Morgen</button>
-      <button onclick="switchTodoView('all')" style="${todoViewBtnStyle('all')}">Alle</button>
-      <button onclick="openTodoForm()"
-        style="padding:0.55rem 0.85rem;border-radius:8px;font-family:var(--font-ui);font-size:0.72rem;
-               cursor:pointer;border:none;background:var(--accent);color:#000;font-weight:600;flex-shrink:0;">+ Neu</button>
+    <div class="segmented" style="margin-bottom:0.5rem;">
+      <button onclick="switchTodoView('today')" class="${todoViewBtnClass('today')}">Heute</button>
+      <button onclick="switchTodoView('tomorrow')" class="${todoViewBtnClass('tomorrow')}">Morgen</button>
+      <button onclick="switchTodoView('all')" class="${todoViewBtnClass('all')}">Alle</button>
+      <button onclick="openTodoForm()" class="btn-new">+ Neu</button>
     </div>
-    <button type="button" onclick="toggleTodoFilters()"
-      style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0.65rem;margin-bottom:0.5rem;
-             background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);
-             font-family:var(--font-ui);font-size:0.75rem;cursor:pointer;touch-action:manipulation;">
+    <button type="button" class="filter-toggle" onclick="toggleTodoFilters()">
       <span>Filter & Suchen${filterBadge}</span>
-      <span style="font-size:0.65rem;color:var(--border);">Sort: ${todoSortLabel()} · ${todoFiltersOpen ? '▴' : '▾'}</span>
+      <span style="font-size:0.65rem;color:var(--muted);">Sort: ${todoSortLabel()} · ${todoFiltersOpen ? '▴' : '▾'}</span>
     </button>
     ${todoFiltersOpen ? `
-    <div id="todo-filters-panel" style="margin-bottom:0.65rem;padding:0.65rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;">
+    <div id="todo-filters-panel" class="glass-panel" style="margin-bottom:0.65rem;padding:0.65rem;">
       <div style="position:relative;margin-bottom:0.5rem;">
-        <input type="text" placeholder="Suchen..." value="${escapeHtml(todoSearchQuery)}"
+        <input type="text" class="field-input" placeholder="Suchen..." value="${escapeHtml(todoSearchQuery)}"
           oninput="todoSearchQuery=this.value;renderTodos(_todoCache)"
-          style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
-                 padding:0.55rem 0.75rem 0.55rem 2rem;color:var(--text);font-family:var(--font-ui);
-                 font-size:0.82rem;outline:none;box-sizing:border-box;">
+          style="padding-left:2rem;box-sizing:border-box;">
         <span style="position:absolute;left:0.6rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:0.85rem;pointer-events:none;">🔍</span>
       </div>
-      <div style="display:flex;gap:0.35rem;overflow-x:auto;padding-bottom:0.35rem;margin-bottom:0.5rem;scrollbar-width:none;">
-        <button onclick="todoCategoryFilter='';renderTodos(_todoCache)" style="${todoFilterPillStyle(!todoCategoryFilter)}">Alle</button>
+      <div class="chip-row">
+        <button onclick="todoCategoryFilter='';renderTodos(_todoCache)" ${todoChipAttrs(!todoCategoryFilter)}>Alle</button>
         ${Object.entries(TODO_CATEGORIES).map(([k,v])=>`
-          <button onclick="todoCategoryFilter='${k}';renderTodos(_todoCache)" style="${todoFilterPillStyle(todoCategoryFilter===k, v.color)}">${v.label}</button>`).join('')}
+          <button onclick="todoCategoryFilter='${k}';renderTodos(_todoCache)" ${todoChipAttrs(todoCategoryFilter===k, v.color)}>${v.label}</button>`).join('')}
       </div>
-      <div style="display:flex;gap:0.35rem;overflow-x:auto;padding-bottom:0.5rem;margin-bottom:0.5rem;scrollbar-width:none;">
-        <button onclick="todoRelevanceFilter='';renderTodos(_todoCache)" style="${todoFilterPillStyle(!todoRelevanceFilter)}">Alle</button>
+      <div class="chip-row">
+        <button onclick="todoRelevanceFilter='';renderTodos(_todoCache)" ${todoChipAttrs(!todoRelevanceFilter)}>Alle</button>
         ${Object.entries(TODO_RELEVANCE).map(([k,v])=>`
-          <button onclick="todoRelevanceFilter='${k}';renderTodos(_todoCache)" style="${todoFilterPillStyle(todoRelevanceFilter===k, v.color)}">${v.label}</button>`).join('')}
+          <button onclick="todoRelevanceFilter='${k}';renderTodos(_todoCache)" ${todoChipAttrs(todoRelevanceFilter===k, v.color)}>${v.label}</button>`).join('')}
       </div>
-      <select onchange="setTodoSortBy(this.value)"
-        style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.75rem;
-               color:var(--text);font-family:var(--font-ui);font-size:0.82rem;outline:none;margin-bottom:0.5rem;">
+      <select class="field-select" onchange="setTodoSortBy(this.value)" style="margin-bottom:0.5rem;">
         <option value="smart" ${todoSortBy==='smart'?'selected':''}>Sort: Smart (Standard)</option>
         <option value="date" ${todoSortBy==='date'?'selected':''}>Sort: Datum</option>
         <option value="category" ${todoSortBy==='category'?'selected':''}>Sort: Kategorie</option>
@@ -2456,34 +2820,30 @@ function renderTodos(todos) {
       </button>
     </div>` : ''}
     <div id="todos-open-list">
-      ${open.length===0?`<div style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem;">${emptyMsg}</div>`:open.map(t=>todoCard(t)).join('')}
+      ${open.length===0?`<div class="empty-state" style="margin-bottom:1rem;">${emptyMsg}</div>`:open.map(t=>todoCard(t)).join('')}
     </div>
     ${done.length>0?`<div style="margin-top:1.25rem;"><div class="section-title">ERLEDIGT</div>${done.map(t=>todoCard(t)).join('')}</div>`:''}
-    <div id="todo-form-modal" class="hidden"
-      style="position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;display:flex;align-items:flex-end;justify-content:center;">
-      <div style="background:var(--surface);border-radius:16px 16px 0 0;padding:1.5rem;width:100%;max-width:480px;border-top:1px solid var(--border);max-height:90dvh;overflow-y:auto;">
+    <div id="todo-form-modal" class="hidden modal-overlay">
+      <div class="modal-sheet" style="padding:1.5rem;max-height:90dvh;">
         ${todoFormHTML()}
       </div>
     </div>
-    <div id="todo-done-modal" class="hidden"
-      style="position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;display:flex;align-items:center;justify-content:center;padding:1.5rem;">
-      <div style="background:var(--surface);border-radius:16px;padding:1.5rem;width:100%;max-width:360px;border:1px solid var(--border);">
-        <div style="font-size:0.7rem;letter-spacing:0.15em;color:var(--muted);margin-bottom:1rem;">WIE LANGE HAST DU WIRKLICH GEBRAUCHT?</div>
-        <input type="number" id="todo-actual-min" placeholder="Minuten" min="1" max="999"
-          style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem;color:var(--text);font-family:var(--font-mono);font-size:1.2rem;width:100%;margin-bottom:0.75rem;outline:none;text-align:center;">
+    <div id="todo-done-modal" class="hidden modal-overlay center">
+      <div class="modal-sheet rounded">
+        <div class="modal-label">WIE LANGE HAST DU WIRKLICH GEBRAUCHT?</div>
+        <input type="number" id="todo-actual-min" class="field-input" placeholder="Minuten" min="1" max="999"
+          style="font-family:var(--font-mono);font-size:1.2rem;text-align:center;margin-bottom:0.75rem;">
         <div id="todo-done-estimate" style="font-size:0.75rem;color:var(--muted);text-align:center;margin-bottom:1rem;"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-          <button onclick="closeDoneModal()" style="background:transparent;border:1px solid var(--border);border-radius:8px;padding:0.85rem;color:var(--muted);font-family:var(--font-ui);cursor:pointer;">Abbrechen</button>
-          <button onclick="confirmDone()" style="background:var(--accent);border:none;border-radius:8px;padding:0.85rem;color:#000;font-family:var(--font-ui);font-weight:600;cursor:pointer;">Erledigt ✓</button>
+          <button class="btn-secondary" onclick="closeDoneModal()">Abbrechen</button>
+          <button class="btn-primary" onclick="confirmDone()">Erledigt ✓</button>
         </div>
       </div>
     </div>
-    <div id="todo-actions-sheet" class="hidden"
-      style="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;display:flex;align-items:flex-end;justify-content:center;"
-      onclick="closeTodoActions()">
-      <div style="background:var(--surface);border-radius:16px 16px 0 0;padding:1.25rem;width:100%;max-width:480px;border-top:1px solid var(--border);" onclick="event.stopPropagation()">
+    <div id="todo-actions-sheet" class="hidden modal-overlay" onclick="closeTodoActions()">
+      <div class="modal-sheet" style="padding:1.25rem;" onclick="event.stopPropagation()">
         <div id="todo-actions-title" style="font-size:0.75rem;color:var(--muted);margin-bottom:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-        <button onclick="editTodoFromActions()" style="display:block;width:100%;background:none;border:none;color:var(--text);font-family:var(--font-ui);font-size:0.95rem;padding:0.85rem 0;text-align:left;cursor:pointer;border-bottom:1px solid var(--border);touch-action:manipulation;">✏️ Bearbeiten</button>
+        <button onclick="editTodoFromActions()" style="display:block;width:100%;background:none;border:none;color:var(--text);font-family:var(--font-ui);font-size:0.95rem;padding:0.85rem 0;text-align:left;cursor:pointer;border-bottom:1px solid var(--glass-border);touch-action:manipulation;">✏️ Bearbeiten</button>
         <button onclick="deleteTodoFromActions()" style="display:block;width:100%;background:none;border:none;color:var(--red);font-family:var(--font-ui);font-size:0.95rem;padding:0.85rem 0;text-align:left;cursor:pointer;touch-action:manipulation;">🗑 Löschen</button>
       </div>
     </div>
@@ -2550,18 +2910,18 @@ function todoCard(t) {
   const phone = extractPhoneFromDetail(t.detail);
   const telLink = phone && !isDone && (t.title.includes('Sales Call') || t.category === 'rais')
     ? `<a href="tel:${phone}" onclick="event.stopPropagation()" style="font-size:0.65rem;color:var(--accent);text-decoration:none;">📞 Anrufen</a>` : '';
-  return `<div class="todo-card" data-todo-id="${t.id}" data-done="${isDone ? '1' : '0'}" style="background:var(--surface);border:1px solid ${isDone?'var(--border)':cat.color+'44'};border-left:3px solid ${isDone?'var(--border)':cat.color};border-radius:10px;padding:0.85rem 1rem;margin-bottom:0.5rem;opacity:${isDone?'0.5':'1'};">
+  return `<div class="todo-card${isDone ? ' done' : ''}" data-todo-id="${t.id}" data-done="${isDone ? '1' : '0'}" style="border-left:3px solid ${isDone ? 'var(--glass-border)' : cat.color};${!isDone ? `border-color:${cat.color}33;` : ''}">
     <div style="display:flex;align-items:flex-start;gap:0.75rem;">
       <button onclick="${isDone?'':'openDoneModal('+t.id+','+(t.estimated_min||0)+')'}" touch-action="manipulation"
-        style="flex-shrink:0;width:22px;height:22px;border-radius:6px;margin-top:2px;border:2px solid ${isDone?'var(--green)':cat.color};background:${isDone?'var(--green)':'transparent'};cursor:${isDone?'default':'pointer'};display:flex;align-items:center;justify-content:center;">
+        class="todo-check${isDone ? ' checked' : ''}" style="--todo-accent:${isDone?'var(--green)':cat.color};border-color:${isDone?'var(--green)':cat.color};">
         ${isDone?'<svg viewBox="0 0 12 12" fill="none" stroke="#000" stroke-width="2.5" width="12" height="12"><polyline points="2 6 5 9 10 3"/></svg>':''}
       </button>
       <div style="flex:1;min-width:0;">
         <div style="font-size:0.85rem;font-weight:500;margin-bottom:0.3rem;text-decoration:${isDone?'line-through':'none'};color:${isDone?'var(--muted)':'var(--text)'};">${escapeHtml(t.title)}</div>
         ${t.detail?`<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.35rem;white-space:pre-wrap;">${escapeHtml(t.detail)}</div>`:''}
         <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
-          <span style="font-size:0.65rem;padding:0.15rem 0.45rem;border-radius:4px;background:${cat.color}22;color:${cat.color};font-weight:500;">${cat.label}</span>
-          <span style="font-size:0.65rem;padding:0.15rem 0.45rem;border-radius:4px;background:${rel.color}22;color:${rel.color};">${rel.label}</span>
+          <span class="meta-tag" style="background:${cat.color}18;color:${cat.color};border-color:${cat.color}33;">${cat.label}</span>
+          <span class="meta-tag" style="background:${rel.color}18;color:${rel.color};border-color:${rel.color}33;">${rel.label}</span>
           ${telLink}
           ${t.estimated_min?`<span style="font-size:0.65rem;color:var(--muted);font-family:var(--font-mono);">~${t.estimated_min}min</span>`:''}
           ${t.actual_min?`<span style="font-size:0.65rem;color:var(--green);font-family:var(--font-mono);">${t.actual_min}min real</span>`:''}
@@ -2588,49 +2948,39 @@ function todoFormHTML(editData = null) {
   const d = editData || {};
   const defaultDate = d.due_date || _todoFormDefaultDate || today;
   return `
-    <div style="font-size:0.7rem;letter-spacing:0.15em;color:var(--muted);margin-bottom:1.25rem;">${editData ? 'TO-DO BEARBEITEN' : 'NEUES TO-DO'}</div>
-    <input type="text" id="todo-title" placeholder="Was muss erledigt werden?" value="${d.title||''}"
-      style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.85rem;color:var(--text);font-family:var(--font-ui);font-size:0.95rem;width:100%;margin-bottom:0.75rem;outline:none;">
-    <textarea id="todo-detail" placeholder="Details (optional)"
-      style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.85rem;width:100%;margin-bottom:0.75rem;outline:none;resize:vertical;min-height:60px;transition:border-color 0.2s;"
-      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">${escapeHtml(d.detail||'')}</textarea>
-    <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">KATEGORIE</div>
-    <select id="todo-category" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.85rem;width:100%;margin-bottom:0.75rem;outline:none;">
+    <div class="modal-label">${editData ? 'TO-DO BEARBEITEN' : 'NEUES TO-DO'}</div>
+    <input type="text" id="todo-title" class="field-input" placeholder="Was muss erledigt werden?" value="${d.title||''}" style="margin-bottom:0.75rem;">
+    <textarea id="todo-detail" class="field-textarea" placeholder="Details (optional)" style="margin-bottom:0.75rem;min-height:60px;">${escapeHtml(d.detail||'')}</textarea>
+    <div class="field-label">KATEGORIE</div>
+    <select id="todo-category" class="field-select" style="margin-bottom:0.75rem;">
       ${Object.entries(TODO_CATEGORIES).map(([k,v])=>`<option value="${k}" ${d.category===k?'selected':''}>${v.label}</option>`).join('')}
     </select>
-    <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">RELEVANZ</div>
+    <div class="field-label">RELEVANZ</div>
     <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">
       ${Object.entries(TODO_RELEVANCE).map(([k,v])=>`
-        <button class="rel-btn" data-rel="${k}" onclick="selectRelevance('${k}')"
-          style="flex:1;padding:0.65rem;border-radius:8px;font-family:var(--font-ui);font-size:0.8rem;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);">
-          ${v.label}</button>`).join('')}
+        <button class="rel-btn" data-rel="${k}" onclick="selectRelevance('${k}')">${v.label}</button>`).join('')}
     </div>
-    <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">GESCHÄTZTE ZEIT (Minuten, optional)</div>
-    <input type="number" id="todo-estimated" placeholder="z.B. 45" min="1" max="999" value="${d.estimated_min||''}"
-      style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-mono);font-size:0.9rem;width:100%;margin-bottom:0.75rem;outline:none;">
+    <div class="field-label">GESCHÄTZTE ZEIT (Minuten, optional)</div>
+    <input type="number" id="todo-estimated" class="field-input" placeholder="z.B. 45" min="1" max="999" value="${d.estimated_min||''}"
+      style="font-family:var(--font-mono);margin-bottom:0.75rem;">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.75rem;">
       <div>
-        <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">DATUM (optional)</div>
-        <input type="date" id="todo-due-date" value="${defaultDate}" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.8rem;width:100%;outline:none;">
+        <div class="field-label">DATUM (optional)</div>
+        <input type="date" id="todo-due-date" class="field-input" value="${defaultDate}">
       </div>
       <div>
-        <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">UHRZEIT (optional)</div>
-        <input type="time" id="todo-due-time" value="${d.due_time?d.due_time.slice(0,5):''}" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text);font-family:var(--font-ui);font-size:0.8rem;width:100%;outline:none;">
+        <div class="field-label">UHRZEIT (optional)</div>
+        <input type="time" id="todo-due-time" class="field-input" value="${d.due_time?d.due_time.slice(0,5):''}">
       </div>
     </div>
-    <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.4rem;">WIEDERHOLUNG</div>
+    <div class="field-label">WIEDERHOLUNG</div>
     <div style="display:flex;gap:0.4rem;margin-bottom:1.25rem;">
       ${[['', 'Einmalig'], ['daily', 'Täglich'], ['weekly', 'Wöchentlich'], ['monthly', 'Monatlich']].map(([val, lbl]) => `
-        <button class="rec-btn" data-rec="${val}" onclick="selectRecurring('${val}')"
-          style="flex:1;padding:0.55rem 0;border-radius:8px;font-family:var(--font-ui);font-size:0.72rem;cursor:pointer;
-                 border:1px solid ${(d.recurring||'')=== val ? 'var(--accent)' : 'var(--border)'};
-                 background:${(d.recurring||'')=== val ? 'rgba(236,106,55,0.15)' : 'transparent'};
-                 color:${(d.recurring||'')=== val ? 'var(--accent)' : 'var(--muted)'};">
-          ${lbl}</button>`).join('')}
+        <button class="rec-btn${(d.recurring||'')===val?' selected':''}" data-rec="${val}" onclick="selectRecurring('${val}')">${lbl}</button>`).join('')}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-      <button onclick="closeTodoForm()" style="background:transparent;border:1px solid var(--border);border-radius:8px;padding:0.85rem;color:var(--muted);font-family:var(--font-ui);cursor:pointer;">Abbrechen</button>
-      <button onclick="saveTodo()" style="background:var(--accent);border:none;border-radius:8px;padding:0.85rem;color:#000;font-family:var(--font-ui);font-weight:600;cursor:pointer;">Speichern</button>
+      <button class="btn-secondary" onclick="closeTodoForm()">Abbrechen</button>
+      <button class="btn-primary" onclick="saveTodo()">Speichern</button>
     </div>
   `;
 }
@@ -2638,26 +2988,20 @@ function todoFormHTML(editData = null) {
 function selectRecurring(val) {
   selectedRecurring = val;
   document.querySelectorAll('.rec-btn').forEach(b => {
-    const active = b.dataset.rec === val;
-    b.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
-    b.style.background  = active ? 'rgba(236,106,55,0.15)' : 'transparent';
-    b.style.color       = active ? 'var(--accent)' : 'var(--muted)';
+    b.classList.toggle('selected', b.dataset.rec === val);
   });
 }
 
 function selectRelevance(r) {
   selectedRelevance = r;
   document.querySelectorAll('.rel-btn').forEach(b => {
-    b.style.borderColor = 'var(--border)';
-    b.style.color = 'var(--muted)';
-    b.style.background = 'transparent';
+    b.classList.remove('selected');
+    b.style.removeProperty('--chip-color');
   });
   const btn = document.querySelector(`.rel-btn[data-rel="${r}"]`);
   if (btn) {
-    const rel = TODO_RELEVANCE[r];
-    btn.style.borderColor = rel.color;
-    btn.style.color = rel.color;
-    btn.style.background = rel.color + '22';
+    btn.style.setProperty('--chip-color', TODO_RELEVANCE[r].color);
+    btn.classList.add('selected');
   }
 }
 
@@ -2779,7 +3123,7 @@ function loadSettings() {
 
   function settingRow(label, sub, inputHtml) {
     return `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 0; border-bottom:1px solid var(--border);">
+      <div class="setting-row">
         <div>
           <div style="font-size:0.9rem;">${label}</div>
           <div style="font-size:0.7rem; color:var(--muted); margin-top:0.15rem;">${sub}</div>
@@ -2790,25 +3134,18 @@ function loadSettings() {
 
   function numInput(id, val, unit) {
     return `<div style="display:flex; align-items:center; gap:0.4rem;">
-      <input id="${id}" type="number" value="${val}" min="1"
-        style="width:52px; background:var(--bg); border:1px solid var(--border); border-radius:6px;
-               padding:0.4rem 0.5rem; color:var(--text); font-family:var(--font-mono); font-size:0.9rem;
-               text-align:center; outline:none;"
+      <input id="${id}" type="number" class="field-input-sm" value="${val}" min="1"
         oninput="saveSetting('${id}', this.value)">
       <span style="font-size:0.75rem; color:var(--muted);">${unit}</span>
     </div>`;
   }
 
   function toggle(id, checked) {
-    return `<label style="position:relative; display:inline-block; width:42px; height:24px; cursor:pointer;">
+    return `<label class="toggle">
       <input type="checkbox" id="${id}" ${checked ? 'checked' : ''}
-        style="opacity:0; width:0; height:0;"
         onchange="saveSetting('${id}', this.checked)">
-      <span style="position:absolute; inset:0; background:${checked ? 'var(--accent)' : 'var(--border)'};
-        border-radius:24px; transition:background 0.2s;" id="${id}-track"></span>
-      <span style="position:absolute; top:3px; left:${checked ? '21px' : '3px'};
-        width:18px; height:18px; background:#fff; border-radius:50%;
-        transition:left 0.2s;" id="${id}-thumb"></span>
+      <span class="toggle-track"></span>
+      <span class="toggle-thumb"></span>
     </label>`;
   }
 
@@ -2833,10 +3170,7 @@ function loadSettings() {
     <div class="card" style="margin-bottom:0.75rem;">
       <div class="section-title">SCHNELLZUGRIFF</div>
       ${links.map(l => `
-        <a href="${l.url}" target="_blank" rel="noopener"
-          style="display:flex; align-items:center; justify-content:space-between;
-                 padding:0.9rem 0; border-bottom:1px solid var(--border);
-                 text-decoration:none; color:var(--text);">
+        <a href="${l.url}" target="_blank" rel="noopener" class="link-row">
           <div style="display:flex; align-items:center; gap:0.6rem;">
             <span style="font-size:1rem;">${l.icon}</span>
             <span style="font-size:0.9rem;">${l.label}</span>
@@ -2852,10 +3186,8 @@ function loadSettings() {
       <div class="section-title">BOT</div>
       <div style="padding:0.9rem 0; border-bottom:1px solid var(--border);">
         <div style="font-size:0.7rem; color:var(--muted); margin-bottom:0.5rem;">CHARACTER-PROMPT</div>
-        <textarea id="bot-character-prompt"
-          style="width:100%; min-height:180px; background:var(--bg); border:1px solid var(--border);
-                 border-radius:6px; padding:0.6rem; color:var(--text); font-family:var(--font-mono);
-                 font-size:0.75rem; line-height:1.5; resize:vertical; outline:none; box-sizing:border-box;"
+        <textarea id="bot-character-prompt" class="field-textarea"
+          style="min-height:180px; font-family:var(--font-mono); font-size:0.75rem; line-height:1.5;"
           placeholder="Character-Prompt wird geladen…"></textarea>
       </div>
       <div style="padding:0.9rem 0; border-bottom:1px solid var(--border);">
@@ -2863,11 +3195,7 @@ function loadSettings() {
         <div id="bot-selected-model" style="font-size:0.85rem; font-family:var(--font-mono); color:var(--muted);">…</div>
       </div>
       <div style="padding:0.9rem 0;">
-        <button onclick="saveBotSettings()"
-          style="background:var(--accent); border:none; border-radius:8px; padding:0.6rem 1.4rem;
-                 color:#fff; font-family:var(--font-ui); font-size:0.85rem; cursor:pointer; touch-action:manipulation;">
-          Prompt speichern
-        </button>
+        <button class="btn-primary" onclick="saveBotSettings()" style="padding:0.6rem 1.4rem; width:auto;">Prompt speichern</button>
       </div>
     </div>
     <div class="card">
@@ -2877,12 +3205,7 @@ function loadSettings() {
         <div id="settings-email" style="font-size:0.85rem; font-family:var(--font-mono); color:var(--muted);">…</div>
       </div>
       <div style="padding:0.9rem 0;">
-        <button onclick="handleLogout()"
-          style="background:transparent; border:1px solid var(--red); border-radius:8px;
-                 padding:0.6rem 1.2rem; color:var(--red); font-family:var(--font-ui);
-                 font-size:0.85rem; cursor:pointer; touch-action:manipulation;">
-          Logout
-        </button>
+        <button class="btn-danger" onclick="handleLogout()" style="padding:0.6rem 1.2rem; width:auto;">Logout</button>
       </div>
     </div>
   `;
@@ -2913,11 +3236,6 @@ function loadSettings() {
 function saveSetting(key, value) {
   if (typeof value === 'boolean') {
     localStorage.setItem(key, value.toString());
-    // update toggle visual without re-render
-    const track = document.getElementById(key + '-track');
-    const thumb  = document.getElementById(key + '-thumb');
-    if (track) track.style.background = value ? 'var(--accent)' : 'var(--border)';
-    if (thumb)  thumb.style.left = value ? '21px' : '3px';
   } else {
     const n = parseFloat(value);
     if (!isNaN(n) && n > 0) localStorage.setItem(key, n.toString());
