@@ -207,7 +207,7 @@
     }
     #toast.visible { transform: translateX(-50%) translateY(0); }
 
-    .nav-item { font-size: 0.58rem; }
+    .nav-item { font-size: 0.52rem; }
     .todo-card { touch-action: pan-y; transition: transform 0.15s; }
     .todo-card.swipe-hint { transform: translateX(4px); }
 
@@ -267,7 +267,7 @@
       will-change: color;
     }
 
-    .nav-item svg { width: 16px; height: 16px; }
+    .nav-item svg { width: 14px; height: 14px; }
     .nav-item.active { color: var(--accent); }
 
     /* Tab panels */
@@ -315,7 +315,6 @@
       RAIS PERFORMANCE
     </span>
     <div class="topbar-actions">
-      <button class="btn-icon" onclick="openSettingsHub()" aria-label="Einstellungen">⚙️</button>
       <button class="btn-logout" onclick="handleLogout()">Logout</button>
     </div>
   </div>
@@ -542,6 +541,12 @@
         min-width:16px; height:16px; padding:0 4px; background:var(--red); color:#fff; border-radius:8px;
         font-size:0.55rem; font-family:var(--font-mono); line-height:16px; text-align:center;"></span>
     </button>
+    <button class="nav-item" data-tab="more">
+      <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+      </svg>
+      Mehr
+    </button>
   </nav>
 
   <!-- Settings hub: Einstellungen, Content, Chat -->
@@ -549,7 +554,7 @@
     <div class="topbar" style="position:relative;">
       <button class="btn-icon" id="settings-back-btn" onclick="settingsHubBack()" style="display:none;">←</button>
       <span class="topbar-logo" id="settings-hub-title" style="letter-spacing:0.12em; font-size:0.75rem;">EINSTELLUNGEN</span>
-      <button class="btn-icon" onclick="closeSettingsHub()">✕</button>
+      <button class="btn-icon" onclick="closeSettingsHubAndRestore()">✕</button>
     </div>
     <div class="tab-content" style="padding-bottom:2rem;">
       <div id="settings-menu" style="padding:0 0.25rem;">
@@ -683,6 +688,27 @@ function closeSettingsHub() {
   _settingsHubSection = null;
 }
 
+function closeSettingsHubAndRestore() {
+  closeSettingsHub();
+  const moreBtn = document.querySelector('.bottom-nav .nav-item[data-tab="more"]');
+  if (moreBtn?.classList.contains('active')) {
+    document.querySelectorAll('.bottom-nav .nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#app-shell > .tab-content > .tab-panel').forEach(p => p.classList.remove('active'));
+    const overviewBtn = document.querySelector('.bottom-nav .nav-item[data-tab="overview"]');
+    overviewBtn?.classList.add('active');
+    document.getElementById('tab-overview')?.classList.add('active');
+  }
+}
+
+function openMoreTab() {
+  playClickSound('tap');
+  triggerHaptic([8]);
+  document.querySelectorAll('.bottom-nav .nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelector('.bottom-nav .nav-item[data-tab="more"]')?.classList.add('active');
+  document.querySelectorAll('#app-shell > .tab-content > .tab-panel').forEach(p => p.classList.remove('active'));
+  openSettingsHub();
+}
+
 function settingsHubBack() {
   openSettingsHub();
 }
@@ -796,8 +822,13 @@ const TAB_ON_ACTIVATE = {
 function initTabs() {
   document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
-      playClickSound('tap'); triggerHaptic([8]);
-      switchTab(btn.dataset.tab);
+      if (btn.dataset.tab === 'more') {
+        openMoreTab();
+      } else {
+        playClickSound('tap');
+        triggerHaptic([8]);
+        switchTab(btn.dataset.tab);
+      }
     });
   });
 }
@@ -2038,7 +2069,8 @@ let todoView = 'today';
 let todoSearchQuery = '';
 let todoCategoryFilter = '';
 let todoRelevanceFilter = '';
-let todoSortBy = localStorage.getItem('todo_sort_by') || 'date';
+let todoSortBy = localStorage.getItem('todo_sort_by') || 'smart';
+let todoFiltersOpen = localStorage.getItem('todo_filters_open') === 'true';
 let _todoFormDefaultDate = null;
 let selectedRelevance = 'medium';
 let selectedRecurring = '';
@@ -2051,6 +2083,32 @@ function setTodoSortBy(mode) {
   todoSortBy = mode;
   localStorage.setItem('todo_sort_by', mode);
   renderTodos(_todoCache);
+}
+
+function toggleTodoFilters() {
+  todoFiltersOpen = !todoFiltersOpen;
+  localStorage.setItem('todo_filters_open', String(todoFiltersOpen));
+  renderTodos(_todoCache);
+}
+
+function resetTodoFilters() {
+  todoSearchQuery = '';
+  todoCategoryFilter = '';
+  todoRelevanceFilter = '';
+  renderTodos(_todoCache);
+}
+
+function todoActiveFilterCount() {
+  let n = 0;
+  if (todoSearchQuery) n++;
+  if (todoCategoryFilter) n++;
+  if (todoRelevanceFilter) n++;
+  return n;
+}
+
+function todoSortLabel() {
+  const labels = { smart: 'Smart', date: 'Datum', category: 'Kategorie', relevance: 'Dringlichkeit' };
+  return labels[todoSortBy] || 'Smart';
 }
 
 function compareTodoDate(a, b) {
@@ -2068,16 +2126,17 @@ function compareTodoDate(a, b) {
 }
 
 function sortTodoList(items, sortBy, isDone) {
+  const mode = sortBy === 'smart' ? 'smart' : sortBy;
   const list = [...items];
   if (isDone) {
-    if (sortBy === 'category') {
+    if (mode === 'category') {
       list.sort((a, b) => {
         const ca = CATEGORY_ORDER.indexOf(a.category);
         const cb = CATEGORY_ORDER.indexOf(b.category);
         if (ca !== cb) return (ca < 0 ? 99 : ca) - (cb < 0 ? 99 : cb);
         return (b.done_at || '').localeCompare(a.done_at || '');
       });
-    } else if (sortBy === 'relevance') {
+    } else if (mode === 'relevance') {
       list.sort((a, b) => {
         const ra = RELEVANCE_ORDER[a.relevance] ?? 9;
         const rb = RELEVANCE_ORDER[b.relevance] ?? 9;
@@ -2090,13 +2149,13 @@ function sortTodoList(items, sortBy, isDone) {
     return list;
   }
   list.sort((a, b) => {
-    if (sortBy === 'category') {
+    if (mode === 'category') {
       const ca = CATEGORY_ORDER.indexOf(a.category);
       const cb = CATEGORY_ORDER.indexOf(b.category);
       if (ca !== cb) return (ca < 0 ? 99 : ca) - (cb < 0 ? 99 : cb);
       const dc = compareTodoDate(a, b);
       if (dc) return dc;
-    } else if (sortBy === 'relevance') {
+    } else if (mode === 'relevance') {
       const ra = RELEVANCE_ORDER[a.relevance] ?? 9;
       const rb = RELEVANCE_ORDER[b.relevance] ?? 9;
       if (ra !== rb) return ra - rb;
@@ -2127,14 +2186,6 @@ function todoFilterPillStyle(active, color) {
     border:1px solid ${active ? (color || 'var(--accent)') : 'var(--border)'};
     background:${active ? (color ? color + '22' : 'rgba(236,106,55,0.15)') : 'transparent'};
     color:${active ? (color || 'var(--accent)') : 'var(--muted)'};`;
-}
-
-function todoSortChipStyle(mode) {
-  const active = todoSortBy === mode;
-  return `flex:1;padding:0.45rem 0;border-radius:8px;font-family:var(--font-ui);font-size:0.72rem;cursor:pointer;
-    border:1px solid ${active ? 'var(--accent)' : 'var(--border)'};
-    background:${active ? 'rgba(236,106,55,0.12)' : 'transparent'};
-    color:${active ? 'var(--accent)' : 'var(--muted)'};`;
 }
 
 async function loadTodos() {
@@ -2202,9 +2253,11 @@ function renderTodos(todos) {
     : todoView === 'today'
       ? 'Keine offenen To-dos für heute.'
       : 'Keine To-dos in dieser Ansicht.';
+  const filterCount = todoActiveFilterCount();
+  const filterBadge = filterCount > 0 ? `<span style="color:var(--accent);font-family:var(--font-mono);"> · ${filterCount}</span>` : '';
 
   document.getElementById('tab-todos').innerHTML = `
-    <div style="display:flex;gap:0.35rem;margin-bottom:0.75rem;align-items:stretch;">
+    <div style="display:flex;gap:0.35rem;margin-bottom:0.5rem;align-items:stretch;">
       <button onclick="switchTodoView('today')" style="${todoViewBtnStyle('today')}">Heute</button>
       <button onclick="switchTodoView('tomorrow')" style="${todoViewBtnStyle('tomorrow')}">Morgen</button>
       <button onclick="switchTodoView('all')" style="${todoViewBtnStyle('all')}">Alle</button>
@@ -2212,32 +2265,46 @@ function renderTodos(todos) {
         style="padding:0.55rem 0.85rem;border-radius:8px;font-family:var(--font-ui);font-size:0.72rem;
                cursor:pointer;border:none;background:var(--accent);color:#000;font-weight:600;flex-shrink:0;">+ Neu</button>
     </div>
-    <div style="position:relative;margin-bottom:0.5rem;">
-      <input type="text" placeholder="Suchen..." value="${escapeHtml(todoSearchQuery)}"
-        oninput="todoSearchQuery=this.value;renderTodos(_todoCache)"
-        style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
-               padding:0.6rem 0.75rem 0.6rem 2rem;color:var(--text);font-family:var(--font-ui);
-               font-size:0.85rem;outline:none;box-sizing:border-box;">
-      <span style="position:absolute;left:0.6rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:0.9rem;pointer-events:none;">🔍</span>
-    </div>
-    <div style="font-size:0.6rem;color:var(--muted);letter-spacing:0.12em;margin-bottom:0.35rem;">KATEGORIE</div>
-    <div style="display:flex;gap:0.35rem;overflow-x:auto;padding-bottom:0.35rem;margin-bottom:0.65rem;scrollbar-width:none;">
-      <button onclick="todoCategoryFilter='';renderTodos(_todoCache)" style="${todoFilterPillStyle(!todoCategoryFilter)}">Alle</button>
-      ${Object.entries(TODO_CATEGORIES).map(([k,v])=>`
-        <button onclick="todoCategoryFilter='${k}';renderTodos(_todoCache)" style="${todoFilterPillStyle(todoCategoryFilter===k, v.color)}">${v.label}</button>`).join('')}
-    </div>
-    <div style="font-size:0.6rem;color:var(--muted);letter-spacing:0.12em;margin-bottom:0.35rem;">DRINGLICHKEIT</div>
-    <div style="display:flex;gap:0.35rem;overflow-x:auto;padding-bottom:0.35rem;margin-bottom:0.65rem;scrollbar-width:none;">
-      <button onclick="todoRelevanceFilter='';renderTodos(_todoCache)" style="${todoFilterPillStyle(!todoRelevanceFilter)}">Alle</button>
-      ${Object.entries(TODO_RELEVANCE).map(([k,v])=>`
-        <button onclick="todoRelevanceFilter='${k}';renderTodos(_todoCache)" style="${todoFilterPillStyle(todoRelevanceFilter===k, v.color)}">${v.label}</button>`).join('')}
-    </div>
-    <div style="font-size:0.6rem;color:var(--muted);letter-spacing:0.12em;margin-bottom:0.35rem;">SORTIEREN</div>
-    <div style="display:flex;gap:0.35rem;margin-bottom:1rem;">
-      <button onclick="setTodoSortBy('date')" style="${todoSortChipStyle('date')}">Datum</button>
-      <button onclick="setTodoSortBy('category')" style="${todoSortChipStyle('category')}">Kategorie</button>
-      <button onclick="setTodoSortBy('relevance')" style="${todoSortChipStyle('relevance')}">Dringlichkeit</button>
-    </div>
+    <button type="button" onclick="toggleTodoFilters()"
+      style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0.65rem;margin-bottom:0.5rem;
+             background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);
+             font-family:var(--font-ui);font-size:0.75rem;cursor:pointer;touch-action:manipulation;">
+      <span>Filter & Suchen${filterBadge}</span>
+      <span style="font-size:0.65rem;color:var(--border);">Sort: ${todoSortLabel()} · ${todoFiltersOpen ? '▴' : '▾'}</span>
+    </button>
+    ${todoFiltersOpen ? `
+    <div id="todo-filters-panel" style="margin-bottom:0.65rem;padding:0.65rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;">
+      <div style="position:relative;margin-bottom:0.5rem;">
+        <input type="text" placeholder="Suchen..." value="${escapeHtml(todoSearchQuery)}"
+          oninput="todoSearchQuery=this.value;renderTodos(_todoCache)"
+          style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
+                 padding:0.55rem 0.75rem 0.55rem 2rem;color:var(--text);font-family:var(--font-ui);
+                 font-size:0.82rem;outline:none;box-sizing:border-box;">
+        <span style="position:absolute;left:0.6rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:0.85rem;pointer-events:none;">🔍</span>
+      </div>
+      <div style="display:flex;gap:0.35rem;overflow-x:auto;padding-bottom:0.35rem;margin-bottom:0.5rem;scrollbar-width:none;">
+        <button onclick="todoCategoryFilter='';renderTodos(_todoCache)" style="${todoFilterPillStyle(!todoCategoryFilter)}">Alle</button>
+        ${Object.entries(TODO_CATEGORIES).map(([k,v])=>`
+          <button onclick="todoCategoryFilter='${k}';renderTodos(_todoCache)" style="${todoFilterPillStyle(todoCategoryFilter===k, v.color)}">${v.label}</button>`).join('')}
+      </div>
+      <div style="display:flex;gap:0.35rem;overflow-x:auto;padding-bottom:0.5rem;margin-bottom:0.5rem;scrollbar-width:none;">
+        <button onclick="todoRelevanceFilter='';renderTodos(_todoCache)" style="${todoFilterPillStyle(!todoRelevanceFilter)}">Alle</button>
+        ${Object.entries(TODO_RELEVANCE).map(([k,v])=>`
+          <button onclick="todoRelevanceFilter='${k}';renderTodos(_todoCache)" style="${todoFilterPillStyle(todoRelevanceFilter===k, v.color)}">${v.label}</button>`).join('')}
+      </div>
+      <select onchange="setTodoSortBy(this.value)"
+        style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.75rem;
+               color:var(--text);font-family:var(--font-ui);font-size:0.82rem;outline:none;margin-bottom:0.5rem;">
+        <option value="smart" ${todoSortBy==='smart'?'selected':''}>Sort: Smart (Standard)</option>
+        <option value="date" ${todoSortBy==='date'?'selected':''}>Sort: Datum</option>
+        <option value="category" ${todoSortBy==='category'?'selected':''}>Sort: Kategorie</option>
+        <option value="relevance" ${todoSortBy==='relevance'?'selected':''}>Sort: Dringlichkeit</option>
+      </select>
+      <button type="button" onclick="resetTodoFilters()"
+        style="background:none;border:none;color:var(--muted);font-family:var(--font-ui);font-size:0.72rem;cursor:pointer;padding:0;">
+        Filter zurücksetzen
+      </button>
+    </div>` : ''}
     <div id="todos-open-list">
       ${open.length===0?`<div style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem;">${emptyMsg}</div>`:open.map(t=>todoCard(t)).join('')}
     </div>
